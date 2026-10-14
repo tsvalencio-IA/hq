@@ -364,6 +364,47 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 @keyframes v5WalkFamily{0%,100%{transform:translateX(0)}50%{transform:translateX(min(10vw,45px))}}
 .family-owner.walking{animation:v5WalkFamily 3.2s ease-in-out 1}
 
+
+/* V5.1 — correção da duplicação: a arte do tronco continha um segundo braço imóvel. */
+.actor.articulated[aria-label="Thiago"] .part-torso {
+  clip-path: polygon(42% 21%, 73% 21%, 76% 27%, 76% 41%, 74% 54%, 42% 54%, 42% 48%, 47% 43%, 48% 31%, 46% 25%);
+}
+.actor.articulated[aria-label="Thamis"] .part-torso {
+  clip-path: polygon(36% 25%, 67% 25%, 70% 29%, 69% 36%, 66% 41%, 61% 46%, 58% 50%, 57% 55%, 58% 58%, 34% 58%, 34% 47%, 36% 35%);
+}
+/* O tórax original continua sob as peças, sem braço duplicado. */
+.actor.articulated .rig-body::before {
+  content:"";position:absolute;pointer-events:none;z-index:2;
+  left:39%;top:26%;width:42%;height:28%;
+  background:linear-gradient(95deg,#10203a 0%,#192d47 45%,#102037 100%);
+  clip-path:polygon(4% 4%,88% 0,100% 16%,92% 100%,12% 100%,0 20%);
+}
+.actor.articulated[aria-label="Thamis"] .rig-body::before {
+  left:31%;top:29%;width:43%;height:29%;
+  background:linear-gradient(94deg,#db5621,#fa762e 48%,#df5d23);
+  clip-path:polygon(11% 0,88% 0,100% 23%,87% 100%,0 100%,0 17%);
+}
+/* Remove mãos e pedaços dos ombros presentes também na pelve e nas pernas. */
+.actor.articulated[aria-label="Thiago"] .part-pelvis,
+.actor.articulated[aria-label="Thiago"] .part-legR {
+  clip-path:polygon(0 0,77% 0,77% 57%,100% 63%,100% 100%,0 100%);
+}
+.actor.articulated[aria-label="Thiago"] .part-head {
+  clip-path:polygon(0 0,100% 0,100% 24%,77% 26%,77% 38%,0 38%);
+}
+.actor.articulated[aria-label="Thamis"] .part-pelvis {
+  clip-path:polygon(34% 0,58% 0,58% 58%,100% 64%,100% 100%,0 100%,0 64%,34% 58%);
+}
+.actor.articulated[aria-label="Thamis"] .part-legL {
+  clip-path:polygon(34% 0,100% 0,100% 100%,0 100%,0 64%,34% 59%);
+}
+.actor.articulated[aria-label="Thamis"] .part-legR {
+  clip-path:polygon(0 0,60% 0,60% 59%,100% 64%,100% 100%,0 100%);
+}
+.actor.articulated[aria-label="Thamis"] .part-head {
+  clip-path:polygon(0 0,100% 0,100% 27%,83% 31%,78% 36%,33% 36%,28% 31%,0 29%);
+}
+
 </style>
 </head>
 <body>
