@@ -56,4 +56,4 @@ function frame(ms){if(!data.last)data.last=ms;let dt=Math.min(.05,Math.max(0,(ms
 canvas.addEventListener('pointerdown',e=>{if(data.scene==='familia'){let box=canvas.getBoundingClientRect();let x=(e.clientX-box.left)/box.width*data.W;throwBall(x);}else if(data.scene==='corrida'&&data.run.active){jump();}});
 window.addEventListener('keydown',e=>{if(e.code==='Space'||e.key==='ArrowUp'){e.preventDefault();jump()}if(e.key==='ArrowDown'){e.preventDefault();slide()}if(e.key==='Enter'&&data.scene==='corrida'){data.run.active=!data.run.active;setupScene()}});
 window.addEventListener('resize',layout);$('reset').onclick=restartCurrent;$('again').onclick=restartCurrent;document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>setScene(b.dataset.scene));layout();setScene('corrida');requestAnimationFrame(frame);
-</script></body></html>
+</script><link rel="stylesheet" href="v3.css?v=3"><script src="v3.js?v=3"></script></body></html>
