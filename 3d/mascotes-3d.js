@@ -410,7 +410,7 @@
 
     const rigs = { thiago: human('thiago'), thamis: human('thamis'), luna: dog('luna'), liz: dog('liz') };
     const snapshot = {};
-    function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0) {
+    function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
       root = M.mul(root, M.rz(walk * Math.sin(time * frequency) * .018));
@@ -431,6 +431,16 @@
           a.elbow.rot[0] = -.4;
           a.palm.rot[2] = .35 * Math.sin(time * 11);
         } else a.palm.rot[2] = 0;
+      }
+      // Oficina: cotovelos dobrados e mãos alcançando o compartimento; sem duplicar membros.
+      if (work > 0) {
+        const amount = clamp(work, 0, 1);
+        for (const a of rig.arms) {
+          a.shoulder.rot[0] = -1.20 * amount;
+          a.shoulder.rot[2] = -a.sign * (.08 + .10 * amount);
+          a.elbow.rot[0] = -.90 * amount;
+          a.palm.rot[0] = -.12 * amount;
+        }
       }
       rig.head.rot[1] = Math.sin(time * .78) * (walk ? .02 : .055);
       rig.head.rot[2] = Math.sin(time * 1.6) * .012;

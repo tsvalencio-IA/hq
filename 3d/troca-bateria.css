@@ -1,0 +1,26 @@
+
+/* Simulação da troca de bateria: controles sempre fora do palco central. */
+#batteryWorkPanel{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 180px);z-index:12;width:min(265px,25vw);max-height:min(46dvh,460px);display:none;overflow:auto;touch-action:pan-y;padding:11px 12px;border-radius:14px;border:1px solid #a5e3f5a8;background:#071f36dc;box-shadow:0 12px 35px #0513209c;backdrop-filter:blur(8px);color:#effaff;text-shadow:none}
+.battery-mode #batteryWorkPanel{display:block}
+#batteryWorkPanel h3{margin:4px 0 6px;font-size:15px;color:#fff;line-height:1.18}
+#batteryWorkPanel small{display:block;color:#c5e9f4;font-size:10px;line-height:1.35}
+#batteryWorkPanel .batteryTitle{font-size:10px;letter-spacing:.11em;color:#ffdd7a;font-weight:900}
+#batteryWorkPanel .batteryMeter{height:6px;background:#24445b;border-radius:20px;overflow:hidden;margin:9px 0}
+#batteryWorkPanel .batteryMeter i{display:block;width:0;height:100%;background:#ffc75d;transition:width .15s}
+#batteryWorkPanel .batteryStatus{font-size:11px;min-height:2.6em;line-height:1.3;margin:4px 0 9px}
+#batteryWorkPanel .batteryActions{display:flex;gap:5px;flex-wrap:wrap}
+#batteryWorkPanel button{font-weight:800;font-size:11px;background:#24597b;border:1px solid #94d3ff91;padding:7px;border-radius:8px;min-height:34px;flex:1}
+#batteryWorkPanel button.primary{background:#d38c24;color:#152a3b}
+.battery-mode #controls,.battery-mode #toybar,.battery-mode #artShelf{opacity:.08;pointer-events:none}
+.battery-mode #minimap{opacity:.3}
+.battery-mode #location{display:none}
+.battery-mode #mission{opacity:.35;pointer-events:none}
+@media(max-width:650px){
+ #batteryWorkPanel{right:6px;top:calc(env(safe-area-inset-top,0px) + 169px);width:clamp(132px,36vw,172px);max-height:38dvh;padding:8px}
+ #batteryWorkPanel h3{font-size:12px}
+ #batteryWorkPanel .batteryTitle{font-size:9px}
+ #batteryWorkPanel small{font-size:9px}
+ #batteryWorkPanel .batteryStatus{font-size:10px}
+ #batteryWorkPanel button{font-size:10px;padding:5px}
+}
+@media(max-height:500px){#batteryWorkPanel{top:calc(env(safe-area-inset-top,0px) + 58px);max-height:72dvh}}
