@@ -47,10 +47,14 @@ for (const [id, rig] of Object.entries(studio.rigs)) {
   assert.ok(bounds.max[1] - bounds.min[1] > (id === 'thiago' || id === 'thamis' ? 2.7 : .9), `${id}: full body`);
 }
 for (const id of ['thiago', 'thamis']) {
+  const rightArm = studio.rigs[id].arms.find(a => a.sign === 1);
+  assert.equal(rightArm.fingers.length, 4, `${id}: individually rigged fingers`);
   studio.drawHuman(id, 0, 0, 0, 1, true, 0, .1, 0);
   const first = [...studio.snapshot[id].joints];
+  const fingersBefore = rightArm.fingers.map(f => f.rot[0]);
   studio.drawHuman(id, 0, 0, .8, 1, true, .4, .3, .5);
   assert.ok(first.some((x, i) => x !== studio.snapshot[id].joints[i]), `${id}: moving joints`);
+  assert.ok(rightArm.fingers.some((f, i) => Math.abs(f.rot[0] - fingersBefore[i]) > .2), `${id}: fingers grip naturally during throw`);
 }
 for (const id of ['luna', 'liz']) {
   studio.drawDog(id, 0, 0, 0, 1, 0, .1, false);
