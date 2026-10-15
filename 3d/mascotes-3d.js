@@ -163,13 +163,22 @@
         return [.412 * Math.sin(theta) * Math.cos(phi), .484 * Math.cos(theta) + .012, .354 * Math.sin(theta) * Math.sin(phi) - .012];
       }, 14, 34, base, undefined, -1);
       if (male) {
-        for (let i = 0; i < 33; i++) {
-          let x = -.34 + i * .021, root = .32 + .15 * Math.sqrt(Math.max(0, 1 - (x / .43) ** 2));
-          g.tube([[x, root - .08, .232], [x + .025, root + .06, .15], [x + .08, root + .045, .014], [x + .11, root - .015, -.09]], .019 + random() * .006, ['#39291f', '#493426', '#2b211e', '#59402c'][i % 4], 13, 6, .007);
+        g.ellipsoid([0,.395,.045],[.29,.112,.23],base,16);
+        const scalp=(x,z)=>.489*Math.sqrt(Math.max(.015,1-(x/.421)**2-(z/.365)**2))+.012;
+        for (let i = 0; i < 29; i++) {
+          const x = -.31 + i * .022;
+          g.tube([[x,scalp(x,.185),.185],[x+.013,scalp(x+.013,.12)+.018,.12],[x+.036,scalp(x+.036,.025)+.015,.025],[x+.052,scalp(x+.052,-.095),-.095]], .012 + random() * .004, ['#39291f', '#493426', '#2b211e', '#59402c'][i % 4], 13, 6, .005);
         }
         for (let i = 0; i < 24; i++) {
           const a = i / 24 * TAU;
           g.tube([[.36 * Math.cos(a), .24, .30 * Math.sin(a)], [.35 * Math.cos(a + .08), .31, .30 * Math.sin(a + .08)]], .012, '#493325', 5, 5, .005);
+        }
+      }
+      if(!male) {
+        const scalp=(x,z)=>.492*Math.sqrt(Math.max(.015,1-(x/.421)**2-(z/.365)**2))+.008;
+        for(let i=0;i<22;i++) {
+          const x=-.31+i*.029;
+          g.tube([[x,scalp(x,.17),.17],[x+.012,scalp(x+.012,.08)+.008,.08],[x+.025,scalp(x+.025,-.04)+.008,-.04],[x+.03,scalp(x+.03,-.16),-.16]],.009,['#34201a','#4b2d21','#2b1b18'][i%3],13,6,.005);
         }
       }
       return g;
