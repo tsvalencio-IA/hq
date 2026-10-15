@@ -1,0 +1,19 @@
+/* World remains visible during each character-led mission action. */
+#action3dLabel{position:absolute;z-index:14;display:none;pointer-events:none;min-width:165px;max-width:265px;padding:8px 12px;border-radius:12px;background:#062944e8;border:1px solid #b1ebfcbb;box-shadow:0 8px 16px #001a2c66;color:#fff7db;text-align:center;font-weight:800;font-size:12px;text-shadow:0 2px 4px #0015}
+.visual-action-mode #dialog{z-index:13;display:block;inset:0;background:transparent;backdrop-filter:none;pointer-events:none;padding:12px}
+.visual-action-mode #dialog .panel{position:absolute;left:12px;top:105px;width:min(355px,33vw);max-height:min(64dvh,525px);padding:13px;border:1px solid #9ee2f0ba;border-radius:16px;background:#092c46e8;box-shadow:0 8px 26px #001b30aa;pointer-events:none;overflow:auto}
+.visual-action-mode #dialog .panel h1{font-size:17px!important}
+.visual-action-mode #dialog #dialogBody{font-size:12px}
+.visual-action-mode #dialog #dialogBody .readings{font-size:11px;padding:6px}
+.visual-action-mode #dialog #dialogActions{opacity:.55;pointer-events:none}
+.visual-action-mode #dialog #closeDialog{pointer-events:auto}
+.visual-action-mode #dialog .choice{padding:7px;margin:4px 0;font-size:11px}
+@media(max-width:700px){
+ #action3dLabel{font-size:10px;max-width:150px;min-width:125px;padding:6px}
+ .visual-action-mode #dialog{padding:0}
+ .visual-action-mode #dialog .panel{top:calc(env(safe-area-inset-top) + 58px);left:7px;right:7px;width:auto;max-height:30dvh;padding:8px;box-shadow:0 4px 14px #0018}
+ .visual-action-mode #dialog .panel h1{font-size:13px!important;margin:3px 0}
+ .visual-action-mode #dialog #dialogBody p{font-size:11px;margin:2px 0}
+ .visual-action-mode #dialog #dialogBody .readings{font-size:10px;line-height:1.1;margin:3px 0}
+ .visual-action-mode #dialog #dialogActions{display:none}
+}
