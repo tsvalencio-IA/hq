@@ -76,8 +76,17 @@ try {
   check('Aimed toy is returned', await page.evaluate(() => !__THIA_TEST.getBall()));
 
   await page.evaluate(() => __THIA_TEST.openLocation('garage'));
-  for (const answer of [1, 0, 1, 0]) await page.locator('#dialogActions button.choice').nth(answer).click();
+  check('Every garage answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.garage.length === 4));
+  const initialPosition = await page.evaluate(() => ({x:player.x,z:player.z}));
+  for (const [step,answer] of [1,0,1,0].entries()) {
+    await page.locator('#dialogActions button.choice').nth(answer).click();
+    await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
+    check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
+    if(step === 0) await screenshot(page, 'garage-action-3d');
+    await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+  }
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));
+  check('Garage actions preserve player position', await page.evaluate(p => Math.abs(player.x-p.x)<.001 && Math.abs(player.z-p.z)<.001, initialPosition));
   await page.locator('#closeDialog').click();
   // Regression: the standalone battery animation must not alter garage choices
   // or the player's saved world position when the observation mode closes.
@@ -95,13 +104,22 @@ try {
   await page.locator('#batteryLeave').click();
   check('Exiting the workshop restores the world and avatar', await page.evaluate(position => !window.__THIA_BATTERY_TEST.isActive() && Math.abs(player.x - position.x) < .001 && Math.abs(player.z - position.z) < .001, positionBeforeBattery));
   await page.evaluate(() => __THIA_TEST.openLocation('code'));
-  for (const answer of [1, 2, 0, 1]) await page.locator('#dialogActions button').nth(answer).click();
+  check('Every technology answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.code.length === 4));
+  for (const [step,answer] of [1,2,0,1].entries()) {
+    await page.locator('#dialogActions button.choice').nth(answer).click();
+    await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'code' && __THIA_ACTIONS.current()?.step === step, step);
+    check('Technology step ' + (step+1) + ' plays on the 3D workstation', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
+    if(step === 1) await screenshot(page, 'technology-action-3d');
+    await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+  }
   check('Technology mission completes', await page.evaluate(() => state.medals.code === true));
   await page.locator('#closeDialog').click();
   await page.evaluate(() => { __THIA_TEST.startRace(); for (const p of __THIA_TEST.racePoints) { player.x = p.x; player.z = p.z; __THIA_TEST.gameStep(.05); } });
   check('All six race checkpoints finish', await page.evaluate(() => state.medals.race === true && __THIA_TEST.getRace() === null));
+  check('Race checkpoints show a world-space celebration', await page.evaluate(() => window.__THIA_ACTIONS && E.gl.getError() === 0));
   await page.evaluate(() => { for (const p of __THIA_TEST.collectible) { player.x = p.x; player.z = p.z; __THIA_TEST.gameStep(.01); } });
   check('All hidden stars unlock exploration', await page.evaluate(() => state.medals.explore === true));
+  check('Star pickup uses articulated avatar and 3D effect', await page.evaluate(() => window.__THIA_ACTIONS && E.gl.getError() === 0));
   await page.locator('#menuBtn').click();
   await page.getByRole('button', { name: 'Controlar Thamis', exact: true }).click();
   check('Avatar selection works', await page.evaluate(() => state.avatar === 'thamis'));
