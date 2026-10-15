@@ -30,14 +30,16 @@ try {
   const installMeta = await page.evaluate(async () => {
     const link = document.querySelector('link[rel="manifest"]');
     const manifest = link && await fetch(link.href).then(r => r.ok ? r.json() : null);
-    const icons = await Promise.all(['icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'].map(async src => {
+    const icons = await Promise.all(['icons/mascotes-reais-192.png','icons/mascotes-reais-512.png','icons/mascotes-reais-maskable-512.png'].map(async src => {
       const img = new Image(); img.src = src; try { await img.decode(); return [img.naturalWidth,img.naturalHeight] } catch { return null }
     }));
     return { manifest, icons, favicon: document.querySelector('link[rel="icon"][type="image/png"]')?.getAttribute('href') };
   });
   check('Browser installation manifest is served', installMeta.manifest?.display === 'standalone' && installMeta.manifest?.start_url === './' && installMeta.manifest?.scope === './');
   check('Launcher icons are valid 192px and 512px PNG files', JSON.stringify(installMeta.icons) === JSON.stringify([[192,192],[512,512],[512,512]]));
-  check('Android adaptive icon and browser favicon use approved branding', !!installMeta.manifest?.icons?.some(i => i.purpose === 'maskable') && installMeta.favicon === 'icons/icon-192.png');
+  check('Android adaptive icon and browser favicon use approved branding', !!installMeta.manifest?.icons?.some(i => i.purpose === 'maskable') && installMeta.favicon === 'icons/mascotes-reais-192.png');
+  check('Installed app keeps the same identity and progress origin', installMeta.manifest?.id === './');
+  check('All three manifest icons point only to the actual approved mascots', installMeta.manifest?.icons?.every(i => i.src.startsWith('icons/mascotes-reais-')) === true);
   check('Service worker is registered only within the 3D game', await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) return false;
     const reg = await Promise.race([navigator.serviceWorker.ready,new Promise(resolve=>setTimeout(()=>resolve(null),15000))]);
