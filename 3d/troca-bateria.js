@@ -39,7 +39,7 @@ function begin(){
  if(work)return;
  if(dialogOpen)closeDialog();
  backup={player:{x:player.x,z:player.z,heading:player.heading,speed:player.speed,jump:player.jump},partner:{x:partner.x,z:partner.z,heading:partner.heading},camera:{yaw:camera.yaw,pitch:camera.pitch,dist:camera.dist}};
- player.x=29.1;player.z=-17.55;player.heading=Math.PI;player.speed=0;player.jump=0;
+ player.x=26.2;player.z=-15.4;player.heading=Math.atan2(2.9,-2.15);player.speed=0;player.jump=0;
  partner.x=26;partner.z=-17.5;partner.heading=Math.PI;
  camera.yaw=.46;camera.pitch=.30;camera.dist=9.7;
  work={elapsed:0,lastStep:-1};
@@ -80,6 +80,7 @@ gameStep=function(dt){
  if(work.elapsed<total){
   work.elapsed=Math.min(total,work.elapsed+dt);
   const phase=findPhase(work.elapsed);
+  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.1,u);player.z=lerp(-15.4,-17.55,u);player.heading=Math.atan2(2.9,-2.15);}else{player.x=29.1;player.z=-17.55;player.heading=Math.PI;}
   if(phase.i!==work.lastStep){work.lastStep=phase.i;refreshPanel()}
   document.getElementById('batteryProgress').style.width=Math.round(100*work.elapsed/total)+'%';
  }
@@ -99,7 +100,7 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(work&&id===state.avatar){
   const phase=findPhase(work.elapsed),active=phase.i>=1&&phase.i<10;
   const intensity=active?(.70+.25*Math.sin(work.elapsed*8)):0;
-  return mascotStudio.drawHuman(id,x,z,heading,0,false,0,t,0,0,intensity);
+  return mascotStudio.drawHuman(id,x,z,heading,phase.i===0?1:0,false,0,t,0,0,intensity);
  }
  return originalPerson(id,x,z,heading,move,run,jump,t,throwing);
 };
