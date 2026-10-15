@@ -77,7 +77,7 @@ def paint_icon():
         label=name.upper()
         bx=d.textbbox((0,0),label,font=f,stroke_width=0)
         width=bx[2]-bx[0]
-        bottom=cy+radius-31
+        bottom=cy+radius-(31 if name in ("Thiago", "Thamis") else 86)
         d.rounded_rectangle((cx-width/2-16,bottom-6,cx+width/2+16,bottom+30),
                             radius=15,fill=(3,20,44,194))
         d.text((cx,bottom+10),label,fill=(255,255,255,255),font=f,anchor="mm")
