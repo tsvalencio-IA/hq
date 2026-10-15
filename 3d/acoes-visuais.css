@@ -1,4 +1,5 @@
 /* World remains visible during each character-led mission action. */
+.visual-action-mode #dialog [data-battery-training]{display:none}
 #action3dLabel{position:absolute;z-index:14;display:none;pointer-events:none;min-width:165px;max-width:265px;padding:8px 12px;border-radius:12px;background:#062944e8;border:1px solid #b1ebfcbb;box-shadow:0 8px 16px #001a2c66;color:#fff7db;text-align:center;font-weight:800;font-size:12px;text-shadow:0 2px 4px #0015}
 .visual-action-mode #dialog{z-index:13;display:block;inset:0;background:transparent;backdrop-filter:none;pointer-events:none;padding:12px}
 .visual-action-mode #dialog .panel{position:absolute;left:12px;top:105px;width:min(355px,33vw);max-height:min(64dvh,525px);padding:13px;border:1px solid #9ee2f0ba;border-radius:16px;background:#092c46e8;box-shadow:0 8px 26px #001b30aa;pointer-events:none;overflow:auto}
