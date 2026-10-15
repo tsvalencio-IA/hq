@@ -173,6 +173,14 @@
           const a = i / 24 * TAU;
           g.tube([[.36 * Math.cos(a), .24, .30 * Math.sin(a)], [.35 * Math.cos(a + .08), .31, .30 * Math.sin(a + .08)]], .012, '#493325', 5, 5, .005);
         }
+        // Cropped texture and dark tapered sideburns, including side view.
+        for(const side of [-1,1]){
+          g.ellipsoid([side*.367,.145,-.052],[.041,.13,.123],'#30231d',12);
+          for(let j=0;j<9;j++){
+            const z=-.24+j*.055;
+            g.tube([[side*.375,.24,z],[side*(.405+((j%3)*.007)),.16,z+.022]],.010,'#432e23',6,6,.002);
+          }
+        }
       }
       if(!male) {
         const scalp=(x,z)=>.492*Math.sqrt(Math.max(.015,1-(x/.421)**2-(z/.365)**2))+.008;
@@ -186,10 +194,17 @@
 
     function ponytail() {
       const g = new Geometry();
-      g.ellipsoid([.14, -.03, -.39], [.245, .43, .235], '#291b18', 16, [0, -.22, -.12]);
+      // Approved turnaround: raised and curly ponytail in rounded layered locks.
+      const locks = [
+        [.06,.28,-.43,.17,.20,.18], [.25,.24,-.47,.17,.22,.17],
+        [-.04,.06,-.49,.18,.23,.18], [.30,.03,-.49,.17,.25,.17],
+        [.07,-.22,-.50,.18,.25,.17], [.30,-.29,-.43,.16,.22,.16],
+        [.02,-.48,-.42,.14,.19,.15], [.24,-.51,-.46,.14,.17,.16]
+      ];
+      locks.forEach((q,i)=>g.ellipsoid(q.slice(0,3),q.slice(3),['#2c1b18','#38231e','#4c2e23','#301d19'][i%4],12));
       for (let i = 0; i < 61; i++) {
         const a = i * 2.399, r = .11 + .15 * Math.sqrt(random());
-        const x = .16 + Math.cos(a) * r, z = -.37 + Math.sin(a) * r, top = .43 - random() * .14, length = .75 + random() * .28;
+        const x = .13 + Math.cos(a) * r, z = -.43 + Math.sin(a) * r, top = .40 - random() * .12, length = .68 + random() * .33;
         const pts = [];
         for (let j = 0; j <= 28; j++) {
           const t = j / 28, curl = a + t * TAU * (3.3 + (i % 3) * .25), amp = .026 + t * .025;
@@ -198,6 +213,13 @@
         g.tube(pts, [.023, .027, .022, .007], ['#34201b', '#4b2e22', '#6b4430', '#3f261d', '#2b1b18'][i % 5], 34, 6);
       }
       g.ellipsoid([.11, .39, -.29], [.115, .052, .115], '#b66b39', 10);
+      g.tube([[-.005,.398,-.268],[.10,.416,-.286],[.218,.40,-.318]],.023,'#a65c34',14,7);
+      // Ringlets at the temples frame the face without obscuring the glasses.
+      for (const side of [-1,1]) {
+        const points=[];
+        for(let k=0;k<=17;k++){const t=k/17;points.push([side*(.355+.028*Math.sin(t*TAU*2.2)),.12-t*.42,.065+.038*Math.cos(t*TAU*2.2)])}
+        g.tube(points,[.022,.028,.018,.006],side<0?'#492b22':'#35211c',20,6);
+      }
       return g;
     }
 
@@ -339,6 +361,13 @@
       g.ellipsoid([0, 0, 0], [.297, .29, .265], main, 20);
       const tones = luna ? ['#f6e4c7', '#dfc29d', '#fff0d6', '#ead2af'] : ['#3a302c', '#211f22', '#594239', '#312729'];
       fur(g, [0, .015, -.015], [.284, .278, .257], 105, tones, .105, (p, u) => p[2] < .10 || p[1] > .20 || Math.abs(p[0]) > .23);
+      if (luna) {
+        // Rounded cream forehead tuft from the approved Luna sheet.
+        for(let j=-2;j<=2;j++){
+          const x=j*.073, y=.237+(.035-Math.abs(j)*.013), z=.115;
+          g.ellipsoid([x,y,z],[.064,.065,.094],j%2?'#f5e4ca':'#fff0d6',10);
+        }
+      }
       if (!luna) {
         g.ellipsoid([0, .14, .225], [.04, .16, .057], '#eee5d5', 12);
         for (let i = 0; i < 10; i++) {
@@ -462,6 +491,10 @@
           a.shoulder.rot[2] = -a.sign * (.08 + .10 * amount);
           a.elbow.rot[0] = -.90 * amount;
           a.palm.rot[0] = -.12 * amount;
+          a.fingers.forEach((finger,i)=>{
+            finger.rot[0] = -.55*amount-i*.035*amount;
+            finger.rot[2] = (i-1.5)*.015;
+          });
         }
       }
       rig.head.rot[1] = Math.sin(time * .78) * (walk ? .02 : .055);
@@ -475,10 +508,16 @@
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
       const bob = Math.abs(Math.sin(t)) * walk * .026;
       const root = M.mul(M.tr(x, .018 + bob, z), M.ry(heading));
-      for (const l of rig.legs) { l.hip.rot[0] = Math.sin(t + l.phase) * walk * .55; l.knee.rot[0] = Math.max(0, Math.cos(t + l.phase)) * walk * .5; }
-      rig.head.rot[0] = carrying ? -.08 : Math.sin(time * 1.7 + phase) * .035;
-      rig.head.rot[1] = walk ? .018 * Math.sin(t) : .08 * Math.sin(time * 1.4 + phase);
+      for (const l of rig.legs) {
+        const stride = Math.sin(t + l.phase), lift = Math.max(0, Math.cos(t + l.phase));
+        l.hip.rot[0] = stride * walk * .53;
+        l.knee.rot[0] = lift * walk * .52;
+      }
+      rig.head.rot[0] = carrying ? -.10 : Math.sin(time * 1.7 + phase) * .035 + walk*.025;
+      rig.head.rot[1] = walk ? .026 * Math.sin(t) : .08 * Math.sin(time * 1.4 + phase);
+      rig.head.rot[2] = walk * Math.cos(t*.5) * .032;
       rig.tail.rot[2] = Math.sin(time * (walk ? 12 : 7) + phase) * .38;
+      rig.tail.rot[1] = Math.sin(time * (walk ? 8 : 5) + phase) * .20;
       for (const a of rig.ears) { a.ear.rot[0] = Math.sin(t + .5) * walk * .13; a.ear.rot[2] = a.sign * Math.sin(t) * walk * .07; }
       E.contactShadow(x, z, .40, .58, 0);
       rig.root.render(root);
