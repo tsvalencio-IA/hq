@@ -1,7 +1,14 @@
-# Personagens aprovados — Universo thIAguinho
+# Personagens — Universo thIAguinho
 
-Arte de referência oficial: `mascotes_aprovados.webp` (Thiago, Thamis, Luna e Liz).
+Referência visual aprovada: `mascotes_aprovados.webp`, com Thiago, Thamis, Luna e Liz. A ficha permanece acessível em `personagens.html`.
 
-A versão WebGL em `3d/index.html` mantém os mascotes ilustrados como modo inicial, em lugar dos bonecos geométricos experimentais. A ficha completa está em `3d/personagens.html` e no botão **Personagens aprovados** dentro do jogo.
+`mascotes-3d.js` constrói recriações volumétricas dos quatro personagens. Não há alternância entre um sprite e um boneco geométrico antigo. Cada personagem usa malhas próprias e uma hierarquia de articulações; as posições, normais e rotações são verificadas por `tests/geometry.mjs`.
 
-Esta publicação **não** cria modelos tridimensionais completos com rigging. O modo geométrico experimental segue disponível no seletor. Jogo e progresso local preservados.
+- Thiago: cabelo castanho curto, barba, óculos pretos, polo azul-marinho, calça cargo escura e tênis vermelhos.
+- Thamis: óculos pretos, cabelo cacheado preso, blusa laranja, legging escura com faixa lateral e tênis verde/cinza. É ligeiramente mais alta que Thiago.
+- Luna: pelagem clara/creme, orelhas caramelo e coleira rosa.
+- Liz: pelagem preta e branca, focinho claro e laços vermelhos.
+
+Humanos: cabeça, ombros, cotovelos, mãos, quadris, joelhos e tornozelos. Cachorrinhas: patas, cabeça, orelhas e cauda. As animações acompanham caminhada, corrida, salto, aceno, arremesso e busca do brinquedo.
+
+A ficha é a referência de desenho; as malhas são uma recriação procedural em 3D, não arquivos 3D originais fornecidos junto da arte.

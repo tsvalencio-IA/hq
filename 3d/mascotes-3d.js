@@ -177,7 +177,7 @@
 
     function ponytail() {
       const g = new Geometry();
-      g.ellipsoid([.14, .14, -.39], [.275, .52, .255], '#291b18', 16, [0, -.22, -.12]);
+      g.ellipsoid([.14, -.03, -.39], [.245, .43, .235], '#291b18', 16, [0, -.22, -.12]);
       for (let i = 0; i < 61; i++) {
         const a = i * 2.399, r = .11 + .15 * Math.sqrt(random());
         const x = .16 + Math.cos(a) * r, z = -.37 + Math.sin(a) * r, top = .43 - random() * .14, length = .75 + random() * .28;
@@ -258,7 +258,7 @@
         const ankle = knee.child('ankle' + s, [0, -.50, 0], shoe(male, s));
         legs.push({ hip, knee, ankle, sign: s });
         const sleeve = new Geometry();
-        sleeve.ellipsoid([s * .018, -.112, 0], [male ? .153 : .136, .212, .15], shirt, 16, [0, 0, -s * .17]);
+        sleeve.loft([[.06,.092,.10],[.015,male?.145:.132,.14],[-.10,male?.148:.133,.145],[-.225,.116,.12],[-.25,.106,.11]],shirt,24);
         sleeve.ellipsoid([s * .025, -.254, .003], [.112, .115, .111], skin, 12);
         sleeve.tube([[-.093, -.22, .075], [0, -.246, .123], [.097, -.22, .075]], .009, male ? '#111e30' : '#d55720', 12, 5);
         const shoulder = root.child('shoulder' + s, [s * (male ? .394 : .338), 1.855, 0], sleeve);
@@ -281,15 +281,15 @@
     }
 
     function fur(g, center, scale, count, colors, length, filter) {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < Math.floor(count * 1.8); i++) {
         const a = random() * TAU, b = Math.acos(1 - 2 * random());
         const unit = [Math.sin(b) * Math.cos(a), Math.cos(b), Math.sin(b) * Math.sin(a)];
         const p = unit.map((n, k) => center[k] + n * scale[k]);
         if (filter && !filter(p, unit)) continue;
-        const len = length * (.65 + random() * .7), down = -.55 - random() * .5;
-        const q = [p[0] + unit[0] * len * .43, p[1] + unit[1] * len * .30 + down * len * .3, p[2] + unit[2] * len * .48];
-        const r = [q[0] + .012 * Math.sin(i * 4), q[1] - len * .7, q[2] + len * .12];
-        g.tube([p, q, r], [.017 + random() * .012, .022, .002], colors[i % colors.length], 6, 5);
+        const len = length * (.6 + random() * .6);
+        const q = [p[0] + unit[0] * len * .52, p[1] + unit[1] * len * .40 - len * .12, p[2] + unit[2] * len * .55];
+        const r = [q[0] + .008 * Math.sin(i * 4), q[1] - len * .5, q[2] + .008 * Math.cos(i * 4)];
+        g.tube([p, q, r], [.007 + random() * .006, .011, .001], colors[i % colors.length], 5, 4);
       }
     }
 

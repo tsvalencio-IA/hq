@@ -18,21 +18,23 @@ const listen = page => {
   page.on('requestfailed', r => failedRequests.push(r.url()));
 };
 async function screenshot(page, name) { await page.screenshot({ path: new URL(name + '.png', output).pathname }); }
-async function load(page) {
-  await page.goto(base, { waitUntil: 'networkidle' });
+async function load(page, route = base) {
+  await page.goto(route, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => window.__THIA_TEST, { timeout: 45000 });
   await page.getByRole('button', { name: /ENTRAR NO MUNDO 3D/ }).click();
 }
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } }); listen(page);
-  await load(page);
+  await load(page, base.replace('/3d/', '/'));
+  check('Main entry opens the 3D game', page.url().includes('/3d/'));
+  check('Five-achievement total is displayed', await page.locator('.counter').last().innerText().then(t => t.includes('/5')));
   check('Four articulated models loaded', await page.evaluate(() => Object.keys(__THIA_TEST.mascotStudio.rigs).length === 4 && __THIA_TEST.artMode() === false));
   check('WebGL draws without errors', await page.evaluate(() => E.gl.getError() === 0));
-  await page.evaluate(() => { started = false; player.x = 0; player.z = 8; player.heading = 0; partner.x = 1.5; partner.z = 8; partner.heading = 0; pets[0].x = -.65; pets[0].z = 9.7; pets[0].heading = 0; pets[1].x = 1.3; pets[1].z = 9.7; pets[1].heading = 0; camera.yaw = 0; camera.pitch = .12; camera.dist = 7.1; });
+  await page.evaluate(() => { started = false; toastTime = 0; $('toast').classList.remove('show'); player.x = 0; player.z = 8; player.heading = 0; partner.x = 1.5; partner.z = 8; partner.heading = 0; pets[0].x = -.65; pets[0].z = 9.7; pets[0].heading = 0; pets[1].x = 1.3; pets[1].z = 9.7; pets[1].heading = 0; camera.yaw = 0; camera.pitch = .12; camera.dist = 7.1; });
   await screenshot(page, 'desktop-front');
   await page.evaluate(() => { camera.yaw = .82; camera.pitch = .22; }); await screenshot(page, 'desktop-three-quarter');
   await page.evaluate(() => { camera.yaw = Math.PI; camera.pitch = .17; }); await screenshot(page, 'desktop-back');
-  await page.evaluate(() => { camera.yaw = 0; camera.pitch = .18; camera.dist = 5.2; player.x = -.25; partner.x = 1.1; pets[0].z = 11; pets[1].z = 11; }); await screenshot(page, 'character-close');
+  await page.evaluate(() => { camera.yaw = 0; camera.pitch = .18; camera.dist = 5.2; player.x = -.25; partner.x = 1.1; pets[0].x = -1.1; pets[1].x = 1.7; pets[0].z = 7.1; pets[1].z = 7.1; }); await screenshot(page, 'character-close');
   await page.evaluate(() => { started = true; camera.yaw = 0; camera.dist = 8.5; });
   const z = await page.evaluate(() => player.z);
   await page.keyboard.down('w');
@@ -63,6 +65,16 @@ try {
     }
   }
   check('Both dogs unlock family achievement', await page.evaluate(() => state.medals.family === true));
+  await page.evaluate(() => { player.x = 0; player.z = 8; player.heading = 0; partner.x = 1.3; partner.z = 6.5; camera.yaw = 0; camera.pitch = .65; camera.dist = 11; });
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  const aimedPoint = await page.evaluate(() => M.project(camera.vp, [3, 0, 9.5], E.width, E.height));
+  await page.locator('#aimToggle').click();
+  await page.mouse.click(aimedPoint[0], aimedPoint[1]);
+  const aimedLanding = await page.evaluate(() => __THIA_TEST.getBall()?.land);
+  check('Ground targeting matches the world position', !!aimedLanding && Math.hypot(aimedLanding.x - 3, aimedLanding.z - 9.5) < .35);
+  await page.evaluate(() => { for (let i = 0; i < 2400 && __THIA_TEST.getBall(); i++) __THIA_TEST.gameStep(1 / 60); });
+  check('Aimed toy is returned', await page.evaluate(() => !__THIA_TEST.getBall()));
+
   await page.evaluate(() => __THIA_TEST.openLocation('garage'));
   for (const answer of [1, 0, 1, 0]) await page.locator('#dialogActions button').nth(answer).click();
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));

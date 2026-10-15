@@ -1,26 +1,41 @@
-# Universo thIAguinho — HQ Jogável V4.2
+# Universo thIAguinho — Aventuras em Família 3D
 
-Jogo em pseudo-3D para navegador, com os personagens Thiago, Thamis, Luna (branca/creme) e Liz (preta/branca). As artes caricaturadas e os cenários estão incorporados ao arquivo principal.
+[Jogar](https://tsvalencio-ia.github.io/hq/3d/?v=20261015) · [Personagens de referência](https://tsvalencio-ia.github.io/hq/3d/personagens.html)
 
-**Jogar:** https://tsvalencio-ia.github.io/hq/?v=4.2
+Mundo aberto individual para navegador, com recriações 3D articuladas de Thiago, Thamis, Luna (clara/creme) e Liz (preta/branca), baseadas na ficha visual aprovada. A entrada principal do GitHub Pages abre o mundo 3D.
 
-## Fases
-- **Família — Luna e Liz:** escolha a cachorrinha e o brinquedo, toque ou arraste para arremessar; acompanhe a busca, a captura e a devolução. Vitória após duas devoluções de cada uma.
-- **Corrida:** inicie o percurso, salte cones, agache para evitar barreiras e acelere até a chegada. Existe pontuação, colisão e perda de vidas.
-- **Oficina:** simulação didática de leitura de três parâmetros, decisões de diagnóstico e interação com o reparo ilustrado. **Valores e defeitos são fictícios; não é um diagnóstico de veículo real.**
-- **Sistemas:** organize as etapas Ideia → Protótipo → Teste → Deploy e resolva os bugs apresentados.
+## Aventuras
 
-## Android e computador
-- Interface responsiva, com controles por toque; também funciona com mouse.
-- Narração opcional por síntese de fala do navegador, quando compatível.
-- O progresso de capítulos concluídos é salvo localmente no navegador.
-- Sem autenticação, Firebase ou coleta de dados.
+- Luna e Liz buscam bolinha, disco e ossinho em qualquer região do mapa. A recompensa só é registrada depois da devolução. Duas devoluções de cada cachorrinha desbloqueiam a conquista da família.
+- Corrida por seis checkpoints no parque.
+- Oficina: missão de diagnóstico elétrico com decisões baseadas em leituras **simuladas e didáticas**.
+- Tecnologia: quatro desafios de lógica e de preservação de dados.
+- Exploração: quinze estrelas escondidas pelo mapa.
 
-## Arquivos
-`index.html` é autocontido: imagens, estilos e lógica do jogo ficam no mesmo arquivo para facilitar a publicação pelo GitHub Pages. Arquivos da V3 foram preservados no repositório apenas como histórico.
+Cinco conquistas ao todo. Personagem selecionado, estrelas, conquistas e devoluções são salvos no armazenamento local do navegador. Não há autenticação, multiplayer, Firebase ou backend.
 
-## Validação
-Testes automatizados com Playwright/Chromium em 320×640, 360×740, 390×844 e 1280×800 sem rolagem horizontal e com imagens carregadas. Os quatro fluxos de vitória foram exercitados no Chromium. O funcionamento ainda precisa ser validado num Android físico.
+## Controles
 
-## Observação de fidelidade
-Os personagens são ilustrações 2.5D inspiradas nas artes aprovadas. As animações são estilizadas e não constituem modelos tridimensionais totalmente articulados.
+| Ação | Computador | Celular |
+|---|---|---|
+| Andar | WASD ou setas | Joystick |
+| Correr | Shift | Segurar CORRER |
+| Pular | Espaço | PULAR |
+| Arremessar | F | LANÇAR |
+| Interagir | E | AÇÃO |
+| Câmera | Arrastar + roda do mouse | Arrastar + pinça |
+| Escolher personagem/destino | Menu | Menu |
+
+Os quatro personagens usam malhas com volume e articulações, em vez das imagens planas ou do modo geométrico antigo. Árvores entre a câmera e os personagens ficam transparentes. A ficha de referência e as recriações em 3D estão descritas em [3d/README_PERSONAGENS.md](3d/README_PERSONAGENS.md).
+
+## Estrutura e verificação
+
+- `3d/index.html`: mundo WebGL, controles, interface, missões e progresso local.
+- `3d/mascotes-3d.js`: malhas dos quatro personagens e articulações.
+- `tests/geometry.mjs`: matrizes, vértices, normais, volume e movimento das articulações.
+- `tests/game.mjs`: navegador, devoluções com as duas cachorras, missões, progresso e telas de celular/computador.
+- `.github/workflows/validate-3d.yml`: executa os testes e guarda relatório e capturas no artefato `game-3d-proof`.
+
+Para reproduzir: `npm ci`, `npx playwright install --with-deps chromium`, `npm test`. A validação em navegador emula telas móveis; não equivale a um teste em aparelho Android físico.
+
+As versões anteriores permanecem no histórico Git e nos diretórios de versões.
