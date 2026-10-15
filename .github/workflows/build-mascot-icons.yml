@@ -1,0 +1,43 @@
+name: Build approved mascot PWA icons
+on:
+  push:
+    branches:
+      - fix/icone-mascotes-reais
+    paths:
+      - tools/build_app_icon.py
+      - .github/workflows/build-mascot-icons.yml
+      - 3d/mascotes_aprovados.webp
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  render-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image processing
+        run: python -m pip install --quiet pillow
+      - name: Render four approved characters
+        run: python tools/build_app_icon.py
+      - name: Save icon previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: mascot-install-icons
+          path: 3d/icons/mascotes-reais-*.png
+          retention-days: 14
+      - name: Commit generated binary files on branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 3d/icons/mascotes-reais-192.png 3d/icons/mascotes-reais-512.png 3d/icons/mascotes-reais-maskable-512.png
+          if git diff --cached --quiet; then
+            echo "Icons already up to date."
+          else
+            git commit -m "build(pwa): package approved characters as install icons"
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
