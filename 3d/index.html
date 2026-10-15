@@ -160,4 +160,4 @@ function drawWorld(t){for(let s of spots){let dx=s.x-player.x,dz=s.z-player.z,d=
 function tick(ms){const dt=Math.min(.045,Math.max(0,(ms-lastTime)/1000||0));lastTime=ms;gameStep(dt);renderSkyAndView();drawWorld(state.time);if((Math.floor(ms/1000*8)!==Math.floor((ms-dt*1000)/1000*8)))renderMap();requestAnimationFrame(tick)}
 updateObjective();hud();requestAnimationFrame(tick);
 window.__THIA_TEST={state,player,pets,camera,spots,throwToy,gameStep,medal,startRace:()=>{started=true;startRace()},setStarted:()=>{started=true;$('overlay').classList.add('hidden')},getBall:()=>ball,mascotStudio,artMode:()=>false,aim:screenGround,selectDog,selectToy,openLocation,collectible,racePoints,getRace:()=>runQuest};
-</script><script src="troca-bateria.js?v=1"></script></body></html>
+</script><script src="troca-bateria.js?v=2"></script></body></html>
