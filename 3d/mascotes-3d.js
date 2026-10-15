@@ -361,13 +361,6 @@
       g.ellipsoid([0, 0, 0], [.297, .29, .265], main, 20);
       const tones = luna ? ['#f6e4c7', '#dfc29d', '#fff0d6', '#ead2af'] : ['#3a302c', '#211f22', '#594239', '#312729'];
       fur(g, [0, .015, -.015], [.284, .278, .257], 105, tones, .105, (p, u) => p[2] < .10 || p[1] > .20 || Math.abs(p[0]) > .23);
-      if (luna) {
-        // Rounded cream forehead tuft from the approved Luna sheet.
-        for(let j=-2;j<=2;j++){
-          const x=j*.073, y=.237+(.035-Math.abs(j)*.013), z=.115;
-          g.ellipsoid([x,y,z],[.064,.065,.094],j%2?'#f5e4ca':'#fff0d6',10);
-        }
-      }
       if (!luna) {
         g.ellipsoid([0, .14, .225], [.04, .16, .057], '#eee5d5', 12);
         for (let i = 0; i < 10; i++) {
