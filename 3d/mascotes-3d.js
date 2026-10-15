@@ -445,7 +445,7 @@
 
     const rigs = { thiago: human('thiago'), thamis: human('thamis'), luna: dog('luna'), liz: dog('liz') };
     const snapshot = {};
-    function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0) {
+    function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
       root = M.mul(root, M.rz(walk * Math.sin(time * frequency) * .018));
@@ -493,6 +493,34 @@
       rig.head.rot[1] = Math.sin(time * .78) * (walk ? .02 : .055);
       rig.head.rot[2] = Math.sin(time * 1.6) * .012;
       if (rig.pony) { rig.pony.rot[0] = walk * Math.sin(time * frequency + .7) * .09; rig.pony.rot[2] = walk * Math.sin(time * frequency) * .06; }
+      // Actions are performed by the original rig. Joints return to idle after
+      // each scene; no duplicate actor or flat animation overlay is created.
+      if (actionPose === 'pickup') {
+        root = M.mul(root, M.t(0, -.21, .06));
+        for (const l of rig.legs) { l.hip.rot[0] = -.25; l.knee.rot[0] = .74; l.ankle.rot[0] = -.22; }
+        for (const a of rig.arms) {
+          a.shoulder.rot[0] = -1.15;
+          a.elbow.rot[0] = -.52;
+          a.palm.rot[0] = -.29;
+          for (const f of a.fingers) f.rot[0] = -.43;
+        }
+        rig.head.rot[0] = .32;
+      } else if (actionPose === 'think') {
+        rig.head.rot[1] = Math.sin(time * 9) * .13;
+        const a = rig.arms[0];
+        a.shoulder.rot[0] = -.7; a.elbow.rot[0] = -1.05;
+        a.fingers.forEach((f,i) => { f.rot[0] = -.25 - i*.04; });
+      } else if (actionPose === 'operate') {
+        rig.head.rot[0] = .13;
+        for (const a of rig.arms) {
+          a.shoulder.rot[0] = -1.15 + .07 * Math.sin(time * 8 + a.sign);
+          a.elbow.rot[0] = -.80 + .18 * Math.sin(time * 11 + a.sign);
+          a.palm.rot[0] = .14 * Math.cos(time * 10 + a.sign);
+          a.fingers.forEach((f,i) => { f.rot[0] = -.31 - .22 * Math.max(0,Math.sin(time*13+i+a.sign)); });
+        }
+      } else if (actionPose === 'greet') {
+        rig.head.rot[1] = .13;
+      }
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
       snapshot[id] = { x, z, heading, move: walk, jump, joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
