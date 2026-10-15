@@ -219,11 +219,20 @@
     function hand(skin, side) {
       const g = new Geometry();
       g.ellipsoid([0, -.052, .005], [.072, .104, .054], skin, 12);
-      for (let i = 0; i < 4; i++) {
-        const x = -.047 + i * .03;
-        g.tube([[x, -.10, .012], [x, -.16 + Math.abs(i - 1.5) * .009, .028], [x, -.17 + Math.abs(i - 1.5) * .009, .055]], [.018, .019, .012], skin, 9, 6);
-      }
+      // Fingers have individual articulated joints, so the hand can open,
+      // close and wave without stretching a single rigid mesh.
       g.tube([[side * .055, -.037, .02], [side * .092, -.076, .045], [side * .082, -.105, .06]], [.027, .025, .016], skin, 10, 6);
+      return g;
+    }
+
+    function finger(skin, index) {
+      const g = new Geometry();
+      const length = [.069, .094, .085, .071][index];
+      const dx = (index - 1.5) * .009;
+      g.tube([[0, .012, 0], [dx * .25, -.027, .012],
+        [dx, -length, .026], [dx, -length - .01, .04]],
+        [.018, .018, .014, .010], skin, 12, 7);
+      g.ellipsoid([dx, -length - .009, .04], [.016, .018, .014], skin, 9);
       return g;
     }
 
@@ -299,7 +308,11 @@
         }
         const elbow = shoulder.child('elbow' + s, [s * .025, -.30, 0], fore);
         const palm = elbow.child('hand' + s, [0, -.34, 0], hand(skin, s));
-        arms.push({ shoulder, elbow, palm, sign: s });
+        const fingers = [];
+        for (let i = 0; i < 4; i++)
+          fingers.push(palm.child('finger' + s + '-' + i,
+            [-.047 + i * .031, -.115, .017], finger(skin, i)));
+        arms.push({ shoulder, elbow, palm, fingers, sign: s });
       }
       const head = root.child('head', [0, 2.475, .015], face(male));
       head.child('hair', [0, 0, 0], hairGeometry(male));
@@ -414,6 +427,8 @@
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
       root = M.mul(root, M.rz(walk * Math.sin(time * frequency) * .018));
+      // Controlled upper-body pitch adds momentum without replacing the rig.
+      root = M.mul(root, M.rx(walk * (run ? .041 : .014)));
       for (const l of rig.legs) {
         const phase = time * frequency + (l.sign === 1 ? 0 : PI), stride = Math.sin(phase) * walk;
         l.hip.rot[0] = stride * (run ? .72 : .48) + (jump > .05 ? -.22 : 0);
@@ -425,6 +440,13 @@
         a.shoulder.rot[2] = -a.sign * (.07 + Math.sin(time * 1.6) * .014);
         a.elbow.rot[0] = -(run && walk ? .85 : .16) - Math.max(0, gait * a.sign) * walk * .18;
         a.palm.rot[0] = .04 * Math.sin(time * 2);
+        const grip = throwing && a.sign === 1 ? Math.sin(throwing * PI) : 0;
+        a.fingers.forEach((finger, i) => {
+          finger.rot[0] = -.09 - grip * (.55 + i * .055)
+            + (wave > 0 && a.sign === 1 ? .11 * Math.sin(time * 11 + i * .35) : 0);
+          finger.rot[2] = (i - 1.5) * (wave > 0 && a.sign === 1 ? .075 : .025);
+        });
+        a.palm.rot[1] = throwing && a.sign === 1 ? -.18 * Math.sin(throwing * PI) : 0;
         if (wave > 0 && a.sign === 1) {
           a.shoulder.rot[2] = -2.25;
           a.shoulder.rot[0] = -.17;
