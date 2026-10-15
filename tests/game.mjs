@@ -76,9 +76,24 @@ try {
   check('Aimed toy is returned', await page.evaluate(() => !__THIA_TEST.getBall()));
 
   await page.evaluate(() => __THIA_TEST.openLocation('garage'));
-  for (const answer of [1, 0, 1, 0]) await page.locator('#dialogActions button').nth(answer).click();
+  for (const answer of [1, 0, 1, 0]) await page.locator('#dialogActions button.choice').nth(answer).click();
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));
   await page.locator('#closeDialog').click();
+  // Regression: the standalone battery animation must not alter garage choices
+  // or the player's saved world position when the observation mode closes.
+  await page.evaluate(() => __THIA_TEST.openLocation('garage'));
+  check('Battery training opens as a separate workshop action', await page.locator('[data-battery-training]').count() === 1);
+  const positionBeforeBattery = await page.evaluate(() => ({ x: player.x, z: player.z }));
+  await page.locator('[data-battery-training]').click();
+  check('Animated battery workshop activates', await page.evaluate(() => window.__THIA_BATTERY_TEST?.isActive() === true));
+  const startX = await page.evaluate(() => player.x);
+  await page.evaluate(() => __THIA_TEST.gameStep(.9));
+  check('Mechanic walks toward the vehicle', await page.evaluate(startX => player.x > startX, startX));
+  await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
+  check('Battery workshop completes 11 visible steps', await page.locator('#batteryStepTitle').innerText().then(t => t.includes('concluído')));
+  await screenshot(page, 'battery-workshop');
+  await page.locator('#batteryLeave').click();
+  check('Exiting the workshop restores the world and avatar', await page.evaluate(position => !window.__THIA_BATTERY_TEST.isActive() && Math.abs(player.x - position.x) < .001 && Math.abs(player.z - position.z) < .001, positionBeforeBattery));
   await page.evaluate(() => __THIA_TEST.openLocation('code'));
   for (const answer of [1, 2, 0, 1]) await page.locator('#dialogActions button').nth(answer).click();
   check('Technology mission completes', await page.evaluate(() => state.medals.code === true));
