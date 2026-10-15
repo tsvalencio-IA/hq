@@ -82,7 +82,11 @@ try {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
     check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
-    if(step === 0) await screenshot(page, 'garage-action-3d');
+    if(step === 0) {
+      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
+      check('Garage action rotates the character arms into a working pose', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0] < -.4));
+      await screenshot(page, 'garage-action-3d');
+    }
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
   }
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));
@@ -109,7 +113,11 @@ try {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'code' && __THIA_ACTIONS.current()?.step === step, step);
     check('Technology step ' + (step+1) + ' plays on the 3D workstation', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
-    if(step === 1) await screenshot(page, 'technology-action-3d');
+    if(step === 1) {
+      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
+      check('Computer interaction articulates both arms and hands', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms.every(a => a.shoulder.rot[0] < -.4)));
+      await screenshot(page, 'technology-action-3d');
+    }
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
   }
   check('Technology mission completes', await page.evaluate(() => state.medals.code === true));
