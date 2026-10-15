@@ -152,6 +152,20 @@ try {
     await phone.mouse.move(viewport.width * .3, viewport.height * .43); await phone.mouse.down(); await phone.mouse.move(viewport.width * .6, viewport.height * .49, { steps: 5 }); await phone.mouse.up();
     check(`${name}: orbit camera moves`, await phone.evaluate(yaw => Math.abs(camera.yaw - yaw) > .2, yaw));
     check(`${name}: WebGL is healthy`, await phone.evaluate(() => E.gl.getError() === 0));
+    if (name === 'mobile') {
+      await phone.evaluate(() => __THIA_TEST.openLocation('code'));
+      await phone.locator('#dialogActions button.choice').nth(1).click();
+      await phone.waitForFunction(() => __THIA_ACTIONS.current()?.mode === 'code');
+      check('Mobile quest keeps the 3D scene visible around the character', await phone.evaluate(() => {
+        const panel=document.querySelector('#dialog .panel').getBoundingClientRect();
+        return document.body.classList.contains('visual-action-mode') &&
+          panel.width > 100 && panel.left >= 0 && panel.right <= innerWidth + 1 &&
+          panel.bottom <= innerHeight && E.gl.getError() === 0;
+      }));
+      await screenshot(phone, 'mobile-3d-action');
+      await phone.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+      await phone.locator('#closeDialog').click();
+    }
     await context.close();
   }
   check('No uncaught JavaScript or console errors', errors.length === 0);
