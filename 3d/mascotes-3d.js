@@ -115,7 +115,7 @@
         return [x, y * .475, z + Math.max(0, Math.sin(a)) * .025 * Math.exp(-Math.pow((y + .15) * 3, 2))];
       };
       g.surface(headPoint, 28, 44, skin, (p, u, v, base) => {
-        if (isThiago && (p[1] < -.15 || (Math.abs(p[0]) > .345 && p[1] < .04))) return color(dark);
+        if (isThiago && ((p[1] < -.15 && p[2] > -.035) || (Math.abs(p[0]) > .345 && p[1] < .04 && p[2] > 0))) return color(dark);
         const cheek = Math.exp(-Math.pow((Math.abs(p[0]) - .27) * 8, 2) - Math.pow((p[1] + .065) * 8, 2)) * Math.max(0, p[2]) * .7;
         return [base[0], base[1] * (1 - cheek * .24), base[2] * (1 - cheek * .14)];
       });
@@ -158,7 +158,7 @@
       const g = new Geometry(), base = male ? '#2b211d' : '#2c1b18';
       g.surface((u, v) => {
         const phi = v * TAU, front = Math.max(0, Math.sin(phi));
-        const limit = male ? 1.63 - front * .62 : 1.67 - front * .64;
+        const limit = male ? 1.95 - front * .94 : 1.90 - front * .87;
         const theta = u * limit;
         return [.412 * Math.sin(theta) * Math.cos(phi), .484 * Math.cos(theta) + .012, .354 * Math.sin(theta) * Math.sin(phi) - .012];
       }, 14, 34, base, undefined, -1);
@@ -218,6 +218,25 @@
       return g;
     }
 
+    function shirtLettering(g) {
+      const font = {
+        T:['11111','00100','00100','00100','00100','00100','00100'],
+        H:['10001','10001','10001','11111','10001','10001','10001'],
+        I:['01110','00100','00100','00100','00100','00100','01110'],
+        A:['01110','10001','10001','11111','10001','10001','10001'],
+        G:['01110','10001','10000','10111','10001','10001','01110'],
+        U:['10001','10001','10001','10001','10001','10001','01110'],
+        N:['10001','11001','11001','10101','10011','10011','10001'],
+        O:['01110','10001','10001','10001','10001','10001','01110']
+      }, text='THIAGUINHO', cell=.0074, white=color('#f0f2ed');
+      const point=(x,y)=>[x,y,-.217*Math.sqrt(Math.max(.1,1-(x/.38)**2))-.005];
+      for(let i=0;i<text.length;i++) for(let row=0;row<7;row++) for(let col=0;col<5;col++) if(font[text[i]][row][col]==='1') {
+        const x=(i*6+col-(text.length*6-1)/2)*cell,y=1.81+(6-row)*cell,r=cell*.46;
+        const a=point(x-r,y-r),b=point(x+r,y-r),c=point(x+r,y+r),d=point(x-r,y+r),n=normalize([x/.38,0,-1]);
+        for(const p of [a,b,c,a,c,d])g.vertex(p,n,white);
+      }
+    }
+
     function human(id) {
       const male = id === 'thiago', shirt = male ? '#172537' : '#f16d26', skin = male ? '#d99a72' : '#e5a17b', pants = male ? '#292b2f' : '#25232a';
       const root = new Joint(id, [0, 0, 0]);
@@ -225,6 +244,7 @@
       torso.loft(male ? [[1.15, .24, .19], [1.22, .335, .22], [1.43, .34, .235], [1.71, .365, .225], [1.90, .38, .205], [1.98, .235, .155], [2.015, .12, .11]] : [[1.22, .26, .18], [1.29, .30, .20], [1.45, .245, .18], [1.64, .29, .215], [1.81, .325, .21], [1.93, .28, .16], [1.985, .115, .10]], shirt, 30);
       torso.ellipsoid([0, 2.015, 0], [.125, .15, .12], skin, 12);
       if (male) {
+        shirtLettering(torso);
         torso.tube([[-.17, 1.99, .08], [-.11, 1.93, .20], [0, 1.89, .224], [.11, 1.93, .20], [.17, 1.99, .08]], .035, '#111b29', 20, 6);
         torso.tube([[0, 1.9, .233], [0, 1.73, .234]], .014, '#25344a', 7, 5);
         for (let i = 0; i < 2; i++) torso.ellipsoid([0, 1.85 - i * .06, .249], [.009, .009, .005], '#bbbfb6', 5);
@@ -238,8 +258,7 @@
       }
       root.geometry = torso;
       const hips = new Geometry();
-      hips.ellipsoid([0, 1.18, -.004], [male ? .332 : .333, .24, .228], pants, 18);
-      if (!male) hips.tube([[-.26, 1.36, .11], [0, 1.37, .22], [.26, 1.36, .11]], .025, '#35303a', 16, 6);
+      hips.ellipsoid([0, male ? 1.18 : 1.13, -.004], [male ? .332 : .322, male ? .24 : .22, .218], pants, 18);
       root.child('hips', [0, 0, 0], hips);
       const legs = [], arms = [];
       for (const s of [-1, 1]) {
@@ -384,7 +403,7 @@
     const snapshot = {};
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
-      let root = M.mul(M.tr(x, jump + .015 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
+      let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
       root = M.mul(root, M.rz(walk * Math.sin(time * frequency) * .018));
       for (const l of rig.legs) {
         const phase = time * frequency + (l.sign === 1 ? 0 : PI), stride = Math.sin(phase) * walk;
