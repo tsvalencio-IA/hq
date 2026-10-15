@@ -1,10 +1,10 @@
 /* Instalação web do Universo thIAguinho 3D. Não altera estado nem jogabilidade. */
-const CACHE = 'universo-thiaguinho-3d-pwa-v1';
+const CACHE = 'universo-thiaguinho-3d-pwa-v2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './mascotes-3d.js', './acoes-visuais.js', './acoes-visuais.css',
   './troca-bateria.js', './troca-bateria.css', './mascotes_aprovados.webp',
-  './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'
+  './icons/mascotes-reais-192.png', './icons/mascotes-reais-512.png', './icons/mascotes-reais-maskable-512.png'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => Promise.allSettled(
