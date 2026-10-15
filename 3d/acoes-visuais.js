@@ -41,7 +41,7 @@ function begin(context,choice,callback){
  player.x=area.x-1.6;player.z=area.z+1.5;player.heading=area.face;
  partner.x=area.x+1.2;partner.z=area.z+1.1;partner.heading=area.face;
  scene={...context,choice,correct:choice===correct[context.mode][context.step],
- elapsed:0,from,companion,cameraBefore,area,callback,startedAt:state.time};
+ elapsed:0,from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
  label.textContent=actionNames[context.mode][context.step];
  document.body.classList.add('visual-action-mode');
  shots++;
@@ -82,7 +82,7 @@ const normalStep=gameStep;
 gameStep=function(dt){
  normalStep(dt);
  if(scene){
-  scene.elapsed=Math.min(duration,scene.elapsed+dt);
+  scene.elapsed=Math.min(duration,Math.max(scene.elapsed+dt,(performance.now()-scene.startedWall)/1000));
   const progress=clamp01(scene.elapsed/duration),approach=smooth(progress/.33);
   player.x=interpolate(scene.area.x-1.6,scene.area.x,approach);
   player.z=interpolate(scene.area.z+1.5,scene.area.z,approach);
