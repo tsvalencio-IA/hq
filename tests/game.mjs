@@ -27,6 +27,22 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } }); listen(page);
   await load(page, base.replace('/3d/', '/'));
   check('Main entry opens the 3D game', page.url().includes('/3d/'));
+  const installMeta = await page.evaluate(async () => {
+    const link = document.querySelector('link[rel="manifest"]');
+    const manifest = link && await fetch(link.href).then(r => r.ok ? r.json() : null);
+    const icons = await Promise.all(['icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png'].map(async src => {
+      const img = new Image(); img.src = src; try { await img.decode(); return [img.naturalWidth,img.naturalHeight] } catch { return null }
+    }));
+    return { manifest, icons, favicon: document.querySelector('link[rel="icon"][type="image/png"]')?.getAttribute('href') };
+  });
+  check('Browser installation manifest is served', installMeta.manifest?.display === 'standalone' && installMeta.manifest?.start_url === './' && installMeta.manifest?.scope === './');
+  check('Launcher icons are valid 192px and 512px PNG files', JSON.stringify(installMeta.icons) === JSON.stringify([[192,192],[512,512],[512,512]]));
+  check('Android adaptive icon and browser favicon use approved branding', !!installMeta.manifest?.icons?.some(i => i.purpose === 'maskable') && installMeta.favicon === 'icons/icon-192.png');
+  check('Service worker is registered only within the 3D game', await page.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) return false;
+    const reg = await Promise.race([navigator.serviceWorker.ready,new Promise(resolve=>setTimeout(()=>resolve(null),15000))]);
+    return !!reg?.active && reg.scope.endsWith('/3d/') && reg.active.scriptURL.endsWith('/3d/sw.js');
+  }));
   check('Five-achievement total is displayed', await page.locator('.counter').last().innerText().then(t => t.includes('/5')));
   check('Four articulated models loaded', await page.evaluate(() => Object.keys(__THIA_TEST.mascotStudio.rigs).length === 4 && __THIA_TEST.artMode() === false));
   check('WebGL draws without errors', await page.evaluate(() => E.gl.getError() === 0));
