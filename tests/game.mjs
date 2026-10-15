@@ -87,7 +87,7 @@ try {
   await page.locator('[data-battery-training]').click();
   check('Animated battery workshop activates', await page.evaluate(() => window.__THIA_BATTERY_TEST?.isActive() === true));
   const startX = await page.evaluate(() => player.x);
-  await page.evaluate(() => __THIA_TEST.gameStep(.9));
+  await page.evaluate(() => gameStep(.9)); // invokes workshop wrapper, not original test helper
   check('Mechanic walks toward the vehicle', await page.evaluate(startX => player.x > startX, startX));
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
   check('Battery workshop completes 11 visible steps', await page.locator('#batteryStepTitle').innerText().then(t => t.includes('concluído')));
