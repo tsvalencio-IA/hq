@@ -104,8 +104,10 @@ try {
       check('Free 360 degree camera controls appear for garage diagnosis', await page.locator('#actionCameraControls').isVisible());
       // Pause immediately so slow software-rendered browsers can exercise
       // angle changes without racing the short live demonstration.
-      if(await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='running'))
-        await page.getByRole('button',{name:'Pausar animação'}).click();
+      await page.evaluate(()=>{
+        if(__THIA_ACTIONS.current()?.phase==='running')
+          document.getElementById('actionPause').click();
+      });
       check('Garage action pauses for camera inspection',await page.evaluate(()=>['paused','done'].includes(__THIA_ACTIONS.current()?.phase)));
       const yaw = await page.evaluate(() => camera.yaw);
       await page.getByRole('button',{name:'Girar câmera à direita'}).click();
@@ -118,8 +120,10 @@ try {
       await page.mouse.move(920,440);
       await page.mouse.down();await page.mouse.move(750,470,{steps:4});await page.mouse.up();
       check('Touch/mouse drag rotates camera even with garage dialog open',await page.evaluate(before=>Math.abs(camera.yaw-before)>.10,savedYaw));
-      if(await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='paused'))
-        await page.getByRole('button',{name:'Pausar animação'}).click();
+      await page.evaluate(()=>{
+        if(__THIA_ACTIONS.current()?.phase==='paused')
+          document.getElementById('actionPause').click();
+      });
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
       check('Garage action rotates the character arms into a working pose', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0] < -.4));
       await screenshot(page, 'garage-free-camera-3d');
