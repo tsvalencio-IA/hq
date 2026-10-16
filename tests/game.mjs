@@ -101,11 +101,28 @@ try {
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
     check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
     if(step === 0) {
+      check('Free 360 degree camera controls appear for garage diagnosis', await page.locator('#actionCameraControls').isVisible());
+      const yaw = await page.evaluate(() => camera.yaw);
+      await page.getByRole('button',{name:'Girar câmera à direita'}).click();
+      check('Garage view rotates from dedicated camera control', await page.evaluate(before => Math.abs(camera.yaw-before)>.15,yaw));
+      const eye0=await page.evaluate(() => camera.eye.slice());
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      check('Actual garage 3D view changes with yaw', await page.evaluate(before => Math.hypot(...camera.eye.map((v,i)=>v-before[i]))>.1,eye0));
+      await page.getByRole('button',{name:'Pausar animação'}).click();
+      check('Garage action pauses for camera inspection',await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='paused'));
+      const savedYaw=await page.evaluate(()=>camera.yaw);
+      await page.mouse.move(920,440);
+      await page.mouse.down();await page.mouse.move(750,470,{steps:4});await page.mouse.up();
+      check('Touch/mouse drag rotates camera even with garage dialog open',await page.evaluate(before=>Math.abs(camera.yaw-before)>.10,savedYaw));
+      await page.getByRole('button',{name:'Pausar animação'}).click();
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
       check('Garage action rotates the character arms into a working pose', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0] < -.4));
-      await screenshot(page, 'garage-action-3d');
+      await screenshot(page, 'garage-free-camera-3d');
     }
-    await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+    await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
+    check('Garage action remains available for inspection after performance',await page.evaluate(()=>__THIA_ACTIONS.isActive()));
+    await page.locator('#actionContinue').click();
+    await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));
   check('Garage actions preserve player position', await page.evaluate(p => Math.abs(player.x-p.x)<.001 && Math.abs(player.z-p.z)<.001, initialPosition));
@@ -117,6 +134,10 @@ try {
   const positionBeforeBattery = await page.evaluate(() => ({ x: player.x, z: player.z }));
   await page.locator('[data-battery-training]').click();
   check('Animated battery workshop activates', await page.evaluate(() => window.__THIA_BATTERY_TEST?.isActive() === true));
+  check('Common 360 camera controls are available during battery replacement',await page.locator('#actionCameraControls').isVisible());
+  const batteryYaw=await page.evaluate(()=>camera.yaw);
+  await page.getByRole('button',{name:'Girar câmera à esquerda'}).click();
+  check('Battery replacement still has its original orbit camera',await page.evaluate(before=>camera.yaw<before,batteryYaw));
   const startX = await page.evaluate(() => player.x);
   await page.evaluate(() => gameStep(.9)); // invokes workshop wrapper, not original test helper
   check('Mechanic walks toward the vehicle', await page.evaluate(startX => player.x > startX, startX));
@@ -132,11 +153,19 @@ try {
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'code' && __THIA_ACTIONS.current()?.step === step, step);
     check('Technology step ' + (step+1) + ' plays on the 3D workstation', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
     if(step === 1) {
+      const before=await page.evaluate(()=>({pitch:camera.pitch,dist:camera.dist}));
+      await page.getByRole('button',{name:'Levantar câmera'}).click();
+      await page.getByRole('button',{name:'Aproximar câmera'}).click();
+      check('Technology supports vertical angle and zoom',await page.evaluate(before=>camera.pitch>before.pitch&&camera.dist<before.dist,before));
+      await page.locator('#actionReplay').click();
+      check('Technology scene can replay without altering mission results',await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='running'&&__THIA_ACTIONS.current()?.elapsed<.9));
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
       check('Computer interaction articulates both arms and hands', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms.every(a => a.shoulder.rot[0] < -.4)));
-      await screenshot(page, 'technology-action-3d');
+      await screenshot(page, 'technology-free-camera-3d');
     }
-    await page.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+    await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
+    await page.locator('#actionContinue').click();
+    await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
   check('Technology mission completes', await page.evaluate(() => state.medals.code === true));
   await page.locator('#closeDialog').click();
