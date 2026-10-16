@@ -18,3 +18,43 @@
  .visual-action-mode #dialog #dialogBody .readings{font-size:10px;line-height:1.1;margin:3px 0}
  .visual-action-mode #dialog #dialogActions{display:none}
 }
+
+/* Only camera/observation controls during animated actions. Existing missions
+   and ordinary free-roam controls are not changed. */
+#actionCameraControls,#actionPlaybackControls{display:none;position:absolute;z-index:21;box-sizing:border-box;border:1px solid #a3e5f2bd;background:#08283fe8;color:#eefaff;box-shadow:0 9px 25px #001c3066;border-radius:14px;backdrop-filter:blur(7px)}
+.visual-action-mode #actionCameraControls,.battery-mode #actionCameraControls{display:block}
+#actionCameraControls{right:10px;top:calc(env(safe-area-inset-top) + 58px);width:132px;padding:8px;touch-action:manipulation}
+#actionCameraControls strong,#actionCameraControls small{display:block;text-align:center}
+#actionCameraControls strong{font-size:11px;letter-spacing:.03em;color:#ffdd82}
+#actionCameraControls small{font-size:9px;line-height:1.3;margin:4px 0 6px;color:#c7e8f4}
+.actionCameraGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+#actionCameraControls button,#actionPlaybackControls button{border:1px solid #8dd3ef7d;background:#1a4a64;border-radius:8px;font-weight:850;color:#fff;font-size:20px;min-height:36px;padding:2px 4px;touch-action:manipulation}
+#actionCameraControls .cameraHome{display:block;width:100%;font-size:11px;min-height:29px;margin-top:5px}
+.visual-action-mode #actionPlaybackControls{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+#actionPlaybackControls{left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);padding:8px 10px;max-width:calc(100vw - 14px)}
+#actionPlaybackControls>span{color:#d0ebf6;font-size:11px;line-height:1.3;max-width:165px}
+#actionPlaybackControls>div{display:flex;gap:5px}
+#actionPlaybackControls button{font-size:11px;white-space:nowrap;padding:8px 10px;min-height:36px}
+#actionPlaybackControls #actionContinue:not(:disabled){background:#f4c76c;color:#102d46;border-color:#fff0be}
+#actionPlaybackControls button:disabled{opacity:.4;cursor:default}
+.visual-action-mode #controls,.visual-action-mode #toybar,.visual-action-mode #artShelf{visibility:hidden}
+.visual-action-mode #dialog .panel{top:calc(env(safe-area-inset-top) + 78px);max-height:38dvh}
+.battery-mode #batteryWorkPanel{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px);right:auto;left:12px;width:min(310px,32vw);max-height:43dvh}
+@media(max-width:700px){
+ #actionCameraControls{right:7px;top:calc(env(safe-area-inset-top) + 56px);width:100px;padding:5px}
+ #actionCameraControls strong{font-size:9px}
+ #actionCameraControls small{font-size:8px;margin:3px 0}
+ #actionCameraControls button{font-size:18px;min-height:30px}
+ #actionCameraControls .cameraHome{font-size:9px;min-height:25px}
+ .visual-action-mode #dialog .panel{top:calc(env(safe-area-inset-top) + 54px);left:7px;right:auto;width:calc(100vw - 118px);max-height:23dvh}
+ #actionPlaybackControls{width:calc(100vw - 14px);bottom:calc(env(safe-area-inset-bottom) + 7px);padding:6px;gap:4px}
+ #actionPlaybackControls>span{display:none}
+ #actionPlaybackControls>div{width:100%;display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:5px}
+ #actionPlaybackControls button{font-size:10px;padding:6px 3px;min-height:37px}
+ .battery-mode #batteryWorkPanel{left:7px;right:auto;bottom:calc(env(safe-area-inset-bottom) + 7px);top:auto;width:min(270px,calc(100vw - 121px));max-height:32dvh}
+}
+@media(max-height:490px) and (min-width:701px){
+ .visual-action-mode #dialog .panel{max-height:27dvh}
+ #actionCameraControls{top:48px}
+ #actionPlaybackControls{bottom:4px}
+}
