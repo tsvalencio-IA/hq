@@ -37,7 +37,7 @@
 #actionPlaybackControls button{font-size:11px;white-space:nowrap;padding:8px 10px;min-height:36px}
 #actionPlaybackControls #actionContinue:not(:disabled){background:#f4c76c;color:#102d46;border-color:#fff0be}
 #actionPlaybackControls button:disabled{opacity:.4;cursor:default}
-.visual-action-mode #controls,.visual-action-mode #toybar,.visual-action-mode #artShelf{visibility:hidden}
+.visual-action-mode #controls,.visual-action-mode #toybar,.visual-action-mode #artShelf,.visual-action-mode #mission,.visual-action-mode #minimap,.visual-action-mode #location,.visual-action-mode #widgets,.visual-action-mode #cameraNote,.visual-action-mode #toast{visibility:hidden}
 .visual-action-mode #dialog .panel{top:calc(env(safe-area-inset-top) + 78px);max-height:38dvh}
 .battery-mode #batteryWorkPanel{top:auto;bottom:calc(env(safe-area-inset-bottom) + 12px);right:auto;left:12px;width:min(310px,32vw);max-height:43dvh}
 @media(max-width:700px){
