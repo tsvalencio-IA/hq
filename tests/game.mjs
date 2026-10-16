@@ -105,6 +105,7 @@ try {
       const yaw = await page.evaluate(() => camera.yaw);
       await page.getByRole('button',{name:'Girar câmera à direita'}).click();
       check('Garage view rotates from dedicated camera control', await page.evaluate(before => Math.abs(camera.yaw-before)>.15,yaw));
+      check('Workshop and technology building occlusion is registered only for action camera',await page.evaluate(()=>E.structures.length===2));
       const eye0=await page.evaluate(() => camera.eye.slice());
       await page.evaluate(() => new Promise(requestAnimationFrame));
       check('Actual garage 3D view changes with yaw', await page.evaluate(before => Math.hypot(...camera.eye.map((v,i)=>v-before[i]))>.1,eye0));
@@ -209,8 +210,14 @@ try {
           panel.width > 100 && panel.left >= 0 && panel.right <= innerWidth + 1 &&
           panel.bottom <= innerHeight && E.gl.getError() === 0;
       }));
-      await screenshot(phone, 'mobile-3d-action');
-      await phone.waitForFunction(() => !__THIA_ACTIONS.isActive(), null, { timeout: 15000 });
+      check('Mobile camera pad stays inside the viewport', await phone.locator('#actionCameraControls').evaluate(e => {const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1}));
+      const yawBefore=await phone.evaluate(()=>camera.yaw);
+      await phone.getByRole('button',{name:'Girar câmera à esquerda'}).click();
+      check('Mobile mission has independent camera orbit',await phone.evaluate(y=>Math.abs(camera.yaw-y)>.12,yawBefore));
+      await screenshot(phone, 'mobile-3d-free-camera');
+      await phone.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
+      await phone.locator('#actionContinue').click();
+      await phone.waitForFunction(() => !__THIA_ACTIONS.isActive());
       await phone.locator('#closeDialog').click();
     }
     await context.close();
