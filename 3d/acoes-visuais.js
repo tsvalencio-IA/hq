@@ -21,6 +21,60 @@ const clamp01=n=>Math.max(0,Math.min(1,n));
 const smooth=n=>{n=clamp01(n);return n*n*(3-2*n)};
 const interpolate=(a,b,p)=>a+(b-a)*p;
 const batteryOn=()=>!!(window.__THIA_BATTERY_TEST&&window.__THIA_BATTERY_TEST.isActive());
+const cameraControls=document.createElement('div');
+cameraControls.id='actionCameraControls';
+cameraControls.setAttribute('aria-label','Câmera livre durante ações 3D');
+cameraControls.innerHTML=`<strong>CÂMERA 360°</strong><small>Arraste a cena ou use os botões</small><div class="actionCameraGrid">
+<button type="button" data-camera="left" aria-label="Girar câmera à esquerda">↶</button>
+<button type="button" data-camera="right" aria-label="Girar câmera à direita">↷</button>
+<button type="button" data-camera="up" aria-label="Levantar câmera">↑</button>
+<button type="button" data-camera="down" aria-label="Abaixar câmera">↓</button>
+<button type="button" data-camera="in" aria-label="Aproximar câmera">＋</button>
+<button type="button" data-camera="out" aria-label="Afastar câmera">－</button>
+</div><button type="button" class="cameraHome" data-camera="reset">Enquadrar</button>`;
+document.getElementById('game').appendChild(cameraControls);
+const cameraDefault={yaw:.72,pitch:.29,dist:8.4};
+cameraControls.addEventListener('click',event=>{
+ const control=event.target.closest('button[data-camera]');if(!control||!(scene||batteryOn()))return;
+ switch(control.dataset.camera){
+  case 'left':camera.yaw-=.32;break;
+  case 'right':camera.yaw+=.32;break;
+  case 'up':camera.pitch=Math.min(1.30,camera.pitch+.14);break;
+  case 'down':camera.pitch=Math.max(.08,camera.pitch-.14);break;
+  case 'in':camera.dist=Math.max(4.3,camera.dist-1.25);break;
+  case 'out':camera.dist=Math.min(25,camera.dist+1.25);break;
+  case 'reset':Object.assign(camera,batteryOn()?{yaw:.46,pitch:.30,dist:9.7}:cameraDefault);break;
+ }
+});
+const playback=document.createElement('div');
+playback.id='actionPlaybackControls';
+playback.innerHTML=`<span id="actionPlaybackHint">Acompanhe a ação por todos os ângulos</span><div>
+<button type="button" id="actionReplay" aria-label="Repetir animação">↻ Repetir</button>
+<button type="button" id="actionPause" aria-label="Pausar animação">Ⅱ Pausar</button>
+<button type="button" id="actionContinue" aria-label="Concluir observação e continuar tarefa" disabled>Continuar ›</button>
+</div>`;
+document.getElementById('game').appendChild(playback);
+function updatePlayback(){
+ if(!scene)return;
+ const running=scene.phase==='running',done=scene.phase==='done';
+ document.getElementById('actionPause').textContent=running?'Ⅱ Pausar':done?'✓ Concluída':'▶ Assistir';
+ document.getElementById('actionPause').disabled=done;
+ document.getElementById('actionContinue').disabled=!done;
+ document.getElementById('actionPlaybackHint').textContent=done?'Gire ou aproxime a câmera; avance quando quiser.':running?'Gire a câmera enquanto o personagem trabalha.':'Animação pausada: observe de qualquer ângulo.';
+}
+document.getElementById('actionPause').onclick=()=>{
+ if(!scene||scene.phase==='done')return;
+ scene.phase=scene.phase==='running'?'paused':'running';
+ if(scene.phase==='running')scene.startedWall=performance.now()-scene.elapsed*1000;
+ updatePlayback();
+};
+document.getElementById('actionReplay').onclick=()=>{
+ if(!scene)return;
+ scene.elapsed=0;scene.phase='running';scene.startedWall=performance.now();updatePlayback();
+};
+document.getElementById('actionContinue').onclick=()=>{
+ if(scene?.phase==='done')finish(true);
+};
 function actionContext(){
  const title=document.getElementById('dialogTitle').textContent;
  const kicker=document.getElementById('dialogKicker').textContent;
@@ -41,9 +95,11 @@ function begin(context,choice,callback){
  player.x=area.x-1.6;player.z=area.z+1.5;player.heading=area.face;
  partner.x=area.x+1.2;partner.z=area.z+1.1;partner.heading=area.face;
  scene={...context,choice,correct:choice===correct[context.mode][context.step],
- elapsed:0,from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
+ elapsed:0,phase:'running',from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
+ Object.assign(camera,cameraDefault);
  label.textContent=actionNames[context.mode][context.step];
  document.body.classList.add('visual-action-mode');
+ updatePlayback();
  shots++;
  return true;
 }
@@ -82,7 +138,10 @@ const normalStep=gameStep;
 gameStep=function(dt){
  normalStep(dt);
  if(scene){
-  scene.elapsed=Math.min(duration,Math.max(scene.elapsed+dt,(performance.now()-scene.startedWall)/1000));
+  if(scene.phase==='running'){
+   scene.elapsed=Math.min(duration,Math.max(scene.elapsed+dt,(performance.now()-scene.startedWall)/1000));
+   if(scene.elapsed>=duration){scene.phase='done';updatePlayback()}
+  }
   const progress=clamp01(scene.elapsed/duration),approach=smooth(progress/.33);
   player.x=interpolate(scene.area.x-1.6,scene.area.x,approach);
   player.z=interpolate(scene.area.z+1.5,scene.area.z,approach);
@@ -90,7 +149,6 @@ gameStep=function(dt){
   partner.x=scene.area.x+1.2;partner.z=scene.area.z+1.1;
   const near=progress>.3;
   if(near){partner.heading=scene.area.face;partner.moving=0}
-  if(scene.elapsed>=duration)finish(true);
  }
  if(pickup){pickup.life=Math.max(0,pickup.life-dt);if(!pickup.life)pickup=null}
  if(checkpoint){checkpoint.life=Math.max(0,checkpoint.life-dt);if(!checkpoint.life)checkpoint=null}
@@ -100,8 +158,12 @@ const normalView=renderSkyAndView;
 renderSkyAndView=function(){
  if(!scene)return normalView();
  const target=scene.area.focus,w=canvas.clientWidth,h=canvas.clientHeight;
- // Wide-angle composition: protagonist, partner, object and environment are visible.
- const eye=[target[0]+5.5,target[1]+3.45,target[2]+6.6];
+ // Orbit around the acting character and its workbench at any horizontal angle,
+ // with independent vertical elevation and zoom (touch gestures or buttons).
+ const dist=Math.max(4.3,Math.min(25,camera.dist)),pitch=Math.max(.08,Math.min(1.30,camera.pitch));
+ const eye=[target[0]+Math.sin(camera.yaw)*Math.cos(pitch)*dist,
+            target[1]+Math.sin(pitch)*dist,
+            target[2]+Math.cos(camera.yaw)*Math.cos(pitch)*dist];
  camera.eye=eye;camera.target=target;E.focus=target;
  camera.vp=M.mul(M.perspective(PI/3.0,w/Math.max(h,1),.1,240),M.lookAt(eye,target));
  E.begin(camera.vp,eye);
@@ -111,7 +173,7 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(batteryOn())return normalPerson(id,x,z,heading,move,run,jump,t,throwing);
  if(scene){
   const walking=scene.elapsed<duration*.33&&id===state.avatar;
-  const working=scene.elapsed>duration*.33&&scene.elapsed<duration*.94;
+  const working=scene.elapsed>duration*.33&&(scene.elapsed<duration*.94||scene.phase==='done');
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,t,0,0,
     working?(id===state.avatar?(.75+.18*Math.sin(t*7)):.45):0,
     working?(scene.correct?'operate':'think'):null);
@@ -213,7 +275,7 @@ drawWorld=function(t){
 };
 window.__THIA_ACTIONS={
  isActive:()=>!!scene,
- current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,elapsed:scene.elapsed}:null,
+ current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,elapsed:scene.elapsed,phase:scene.phase}:null,
  stagedActions:actionNames,
  count:()=>shots,
  pickupStar:(x,z)=>{if(!scene)pickup={x,z,life:1.05}},
