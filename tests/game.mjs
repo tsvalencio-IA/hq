@@ -218,6 +218,7 @@ try {
           panel.width > 100 && panel.left >= 0 && panel.right <= innerWidth + 1 &&
           panel.bottom <= innerHeight && E.gl.getError() === 0;
       }));
+      check('Mobile mission HUD stays out of the acting characters view', await phone.evaluate(() => getComputedStyle(document.getElementById('mission')).visibility === 'hidden'));
       check('Mobile camera pad stays inside the viewport', await phone.locator('#actionCameraControls').evaluate(e => {const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1}));
       const yawBefore=await phone.evaluate(()=>camera.yaw);
       await phone.getByRole('button',{name:'Girar câmera à esquerda'}).click();
