@@ -45,7 +45,7 @@ try {
     const reg = await Promise.race([navigator.serviceWorker.ready,new Promise(resolve=>setTimeout(()=>resolve(null),15000))]);
     return !!reg?.active && reg.scope.endsWith('/3d/') && reg.active.scriptURL.endsWith('/3d/sw.js');
   }));
-  check('Five-achievement total is displayed', await page.locator('.counter').last().innerText().then(t => t.includes('/5')));
+  check('Eight-achievement total is displayed', await page.locator('.counter').last().innerText().then(t => t.includes('/8')));
   check('Four articulated models loaded', await page.evaluate(() => Object.keys(__THIA_TEST.mascotStudio.rigs).length === 4 && __THIA_TEST.artMode() === false));
   check('WebGL draws without errors', await page.evaluate(() => E.gl.getError() === 0));
   await page.evaluate(() => { started = false; toastTime = 0; $('toast').classList.remove('show'); player.x = 0; player.z = 8; player.heading = 0; partner.x = 1.5; partner.z = 8; partner.heading = 0; pets[0].x = -.65; pets[0].z = 9.7; pets[0].heading = 0; pets[1].x = 1.3; pets[1].z = 9.7; pets[1].heading = 0; camera.yaw = 0; camera.pitch = .12; camera.dist = 7.1; });
@@ -93,7 +93,7 @@ try {
   await page.evaluate(() => { for (let i = 0; i < 2400 && __THIA_TEST.getBall(); i++) __THIA_TEST.gameStep(1 / 60); });
   check('Aimed toy is returned', await page.evaluate(() => !__THIA_TEST.getBall()));
 
-  await page.evaluate(() => __THIA_TEST.openLocation('garage'));
+  await page.evaluate(() => garageDialog());
   check('Every garage answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.garage.length === 4));
   const initialPosition = await page.evaluate(() => ({x:player.x,z:player.z}));
   for (const [step,answer] of [1,0,1,0].entries()) {
@@ -101,7 +101,11 @@ try {
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
     check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
     if(step === 0) {
-      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
+      const oldCamera=await page.evaluate(()=>camera.eye.slice());
+      await page.getByRole('button',{name:'Girar câmera para a direita',exact:true}).click();
+      await page.evaluate(()=>new Promise(requestAnimationFrame));
+      check('Camera remains controllable during the diagnosis action',await page.evaluate(before=>JSON.stringify(camera.eye)!==JSON.stringify(before),oldCamera));
+      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > 2.0, null, { timeout: 15000 });
       check('Garage action rotates the character arms into a working pose', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0] < -.4));
       await screenshot(page, 'garage-action-3d');
     }
@@ -112,7 +116,7 @@ try {
   await page.locator('#closeDialog').click();
   // Regression: the standalone battery animation must not alter garage choices
   // or the player's saved world position when the observation mode closes.
-  await page.evaluate(() => __THIA_TEST.openLocation('garage'));
+  await page.evaluate(() => garageDialog());
   check('Battery training opens as a separate workshop action', await page.locator('[data-battery-training]').count() === 1);
   const positionBeforeBattery = await page.evaluate(() => ({ x: player.x, z: player.z }));
   await page.locator('[data-battery-training]').click();
@@ -125,14 +129,14 @@ try {
   await screenshot(page, 'battery-workshop');
   await page.locator('#batteryLeave').click();
   check('Exiting the workshop restores the world and avatar', await page.evaluate(position => !window.__THIA_BATTERY_TEST.isActive() && Math.abs(player.x - position.x) < .001 && Math.abs(player.z - position.z) < .001, positionBeforeBattery));
-  await page.evaluate(() => __THIA_TEST.openLocation('code'));
+  await page.evaluate(() => codeDialog());
   check('Every technology answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.code.length === 4));
   for (const [step,answer] of [1,2,0,1].entries()) {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'code' && __THIA_ACTIONS.current()?.step === step, step);
     check('Technology step ' + (step+1) + ' plays on the 3D workstation', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
     if(step === 1) {
-      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
+      await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > 2.0, null, { timeout: 15000 });
       check('Computer interaction articulates both arms and hands', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms.every(a => a.shoulder.rot[0] < -.4)));
       await screenshot(page, 'technology-action-3d');
     }
@@ -171,7 +175,7 @@ try {
     check(`${name}: orbit camera moves`, await phone.evaluate(yaw => Math.abs(camera.yaw - yaw) > .2, yaw));
     check(`${name}: WebGL is healthy`, await phone.evaluate(() => E.gl.getError() === 0));
     if (name === 'mobile') {
-      await phone.evaluate(() => __THIA_TEST.openLocation('code'));
+      await phone.evaluate(() => codeDialog());
       await phone.locator('#dialogActions button.choice').nth(1).click();
       await phone.waitForFunction(() => __THIA_ACTIONS.current()?.mode === 'code');
       check('Mobile quest keeps the 3D scene visible around the character', await phone.evaluate(() => {

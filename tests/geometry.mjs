@@ -29,7 +29,7 @@ const E = {
     }
     return { count: array.length / 9, data: array };
   },
-  drawColored() {}, contactShadow() {}
+  drawColored(mesh,mat) { assert.equal(mat.length,16); assert.ok(mat.every(Number.isFinite),'Articulated action transform is finite'); }, contactShadow() {}
 };
 const studio = ctx.window.createMascotStudio(E, M);
 for (const [id, rig] of Object.entries(studio.rigs)) {
@@ -49,6 +49,12 @@ for (const [id, rig] of Object.entries(studio.rigs)) {
 for (const id of ['thiago', 'thamis']) {
   const rightArm = studio.rigs[id].arms.find(a => a.sign === 1);
   assert.equal(rightArm.fingers.length, 4, `${id}: individually rigged fingers`);
+  studio.drawHuman(id,0,0,0,0,false,0,1,0,0,.8,'garden');
+  assert.ok(studio.rigs[id].legs.every(l=>l.knee.rot[0]>.9),`${id}: bends knees while gardening`);
+  studio.drawHuman(id,0,0,0,0,false,0,1,0);
+  assert.ok(studio.rigs[id].legs.every(l=>l.knee.rot[0]===0),`${id}: returns to idle after task`);
+  assert.equal(studio.rigs[id].head.rot[0],0,`${id}: resets head after task`);
+  for(const pose of ['type','wrench','clean','water','pour','carry','phone'])studio.drawHuman(id,0,0,0,0,false,0,1,0,0,.8,pose);
   studio.drawHuman(id, 0, 0, 0, 1, true, 0, .1, 0);
   const first = [...studio.snapshot[id].joints];
   const fingersBefore = rightArm.fingers.map(f => f.rot[0]);

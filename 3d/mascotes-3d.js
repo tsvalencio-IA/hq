@@ -491,6 +491,7 @@
         }
       }
       rig.head.rot[1] = Math.sin(time * .78) * (walk ? .02 : .055);
+      rig.head.rot[0] = 0;
       rig.head.rot[2] = Math.sin(time * 1.6) * .012;
       if (rig.pony) { rig.pony.rot[0] = walk * Math.sin(time * frequency + .7) * .09; rig.pony.rot[2] = walk * Math.sin(time * frequency) * .06; }
       // Actions are performed by the original rig. Joints return to idle after
@@ -518,14 +519,41 @@
           a.palm.rot[0] = .14 * Math.cos(time * 10 + a.sign);
           a.fingers.forEach((f,i) => { f.rot[0] = -.31 - .22 * Math.max(0,Math.sin(time*13+i+a.sign)); });
         }
+      } else if (['type','wrench','clean','water','pour','carry','garden','phone'].includes(actionPose)) {
+        const beat=Math.sin(time*7), fine=Math.sin(time*12);
+        rig.head.rot[0]=actionPose==='garden'?.30:.14;
+        for(const a of rig.arms){
+          a.shoulder.rot[0]=-.92+.08*Math.sin(time*7+a.sign);
+          a.shoulder.rot[2]=-a.sign*.18;
+          a.elbow.rot[0]=-.82+.12*Math.sin(time*9+a.sign);
+          a.palm.rot[0]=.10*fine;
+          for(const [i,f] of a.fingers.entries())f.rot[0]=-.30-.13*Math.max(0,Math.sin(time*12+i+a.sign));
+        }
+        const right=rig.arms.find(a=>a.sign===1),left=rig.arms.find(a=>a.sign===-1);
+        if(actionPose==='garden'){
+          root=M.mul(root,M.mul(M.t(0,-.48,.12),M.rx(.18)));
+          for(const l of rig.legs){l.hip.rot[0]=-.48;l.knee.rot[0]=1.10;l.ankle.rot[0]=-.35}
+          right.shoulder.rot[0]=-.90+.22*beat;right.elbow.rot[0]=-.40-.22*beat;
+        }else if(actionPose==='wrench'){
+          right.shoulder.rot[0]=-1.18;right.elbow.rot[0]=-.62+.24*beat;right.palm.rot[1]=.45*beat;
+        }else if(actionPose==='clean'){
+          right.shoulder.rot[0]=-1.18+.23*beat;right.shoulder.rot[2]=-.24+.17*Math.cos(time*7);right.elbow.rot[0]=-.44;
+        }else if(actionPose==='water'||actionPose==='pour'){
+          right.shoulder.rot[0]=-.85;right.elbow.rot[0]=-.63;right.palm.rot[2]=-.56;
+          left.shoulder.rot[0]=-.67;left.elbow.rot[0]=-1.10;
+        }else if(actionPose==='carry'){
+          for(const a of rig.arms){a.shoulder.rot[0]=-.70;a.elbow.rot[0]=-1.15;a.palm.rot[0]=-.12}
+        }else if(actionPose==='phone'){
+          left.shoulder.rot[0]=-.72;left.elbow.rot[0]=-1.32;right.shoulder.rot[0]=-.85;right.elbow.rot[0]=-.92+.11*fine;
+        }
       } else if (actionPose === 'greet') {
         rig.head.rot[1] = .13;
       }
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, jump, joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
+      snapshot[id] = { x, z, heading, move: walk, jump, pose:actionPose, joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
     }
-    function drawDog(id, x, z, heading, move, phase, time, carrying) {
+    function drawDog(id, x, z, heading, move, phase, time, carrying, feeding = false) {
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
       const bob = Math.abs(Math.sin(t)) * walk * .026;
       const root = M.mul(M.tr(x, .018 + bob, z), M.ry(heading));
@@ -534,7 +562,7 @@
         l.hip.rot[0] = stride * walk * .53;
         l.knee.rot[0] = lift * walk * .52;
       }
-      rig.head.rot[0] = carrying ? -.10 : Math.sin(time * 1.7 + phase) * .035 + walk*.025;
+      rig.head.rot[0] = feeding ? .57+.05*Math.sin(time*7) : carrying ? -.10 : Math.sin(time * 1.7 + phase) * .035 + walk*.025;
       rig.head.rot[1] = walk ? .026 * Math.sin(t) : .08 * Math.sin(time * 1.4 + phase);
       rig.head.rot[2] = walk * Math.cos(t*.5) * .032;
       rig.tail.rot[2] = Math.sin(time * (walk ? 12 : 7) + phase) * .38;
@@ -542,7 +570,7 @@
       for (const a of rig.ears) { a.ear.rot[0] = Math.sin(t + .5) * walk * .13; a.ear.rot[2] = a.sign * Math.sin(t) * walk * .07; }
       E.contactShadow(x, z, .40, .58, 0);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, carrying, joints: rig.legs.map(l => l.hip.rot[0]) };
+      snapshot[id] = { x, z, heading, move: walk, carrying, feeding, joints: rig.legs.map(l => l.hip.rot[0]) };
     }
     return { drawHuman, drawDog, rigs, snapshot, stats: Object.fromEntries(Object.entries(rigs).map(([id, rig]) => [id, { vertices: rig.root.count(), height: rig.height, type: 'articulated-volumetric-mesh' }])) };
   };

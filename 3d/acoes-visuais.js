@@ -11,7 +11,7 @@ const actionNames={
 const correct={garage:[1,0,1,0],code:[1,2,0,1]};
 const centers={garage:{x:28.7,z:-18.0,face:Math.PI,focus:[29.55,1.65,-19.4]},
  code:{x:-44.5,z:-19.1,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
-const duration=2.05;
+const duration=5.2;
 let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0;
 const label=document.createElement('div');
 label.id='action3dLabel';
@@ -43,6 +43,7 @@ function begin(context,choice,callback){
  scene={...context,choice,correct:choice===correct[context.mode][context.step],
  elapsed:0,from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
  label.textContent=actionNames[context.mode][context.step];
+ camera.yaw=.70;camera.pitch=.37;camera.dist=innerWidth<550?8.7:8;
  document.body.classList.add('visual-action-mode');
  shots++;
  return true;
@@ -54,7 +55,6 @@ function finish(execute){
  document.body.classList.remove('visual-action-mode');
  Object.assign(player,completed.from);
  Object.assign(partner,completed.companion);
- Object.assign(camera,completed.cameraBefore);
  if(execute&&typeof completed.callback==='function')completed.callback();
 }
 document.getElementById('dialogActions').addEventListener('click',ev=>{
@@ -100,8 +100,9 @@ const normalView=renderSkyAndView;
 renderSkyAndView=function(){
  if(!scene)return normalView();
  const target=scene.area.focus,w=canvas.clientWidth,h=canvas.clientHeight;
- // Wide-angle composition: protagonist, partner, object and environment are visible.
- const eye=[target[0]+5.5,target[1]+3.45,target[2]+6.6];
+ const eye=[target[0]+Math.sin(camera.yaw)*Math.cos(camera.pitch)*camera.dist,
+ target[1]+Math.sin(camera.pitch)*camera.dist,
+ target[2]+Math.cos(camera.yaw)*Math.cos(camera.pitch)*camera.dist];
  camera.eye=eye;camera.target=target;E.focus=target;
  camera.vp=M.mul(M.perspective(PI/3.0,w/Math.max(h,1),.1,240),M.lookAt(eye,target));
  E.begin(camera.vp,eye);
@@ -193,7 +194,7 @@ const normalDraw=drawWorld;
 drawWorld=function(t){
  normalDraw(t);
  if(scene)missionObjects(scene,t);
- if(!scene&&!ball&&!batteryOn()&&started&&!dialogOpen){
+ if(!scene&&!ball&&!batteryOn()&&started&&!dialogOpen&&!window.__THIA_WORK?.isActive()){
   const heading=player.heading;
   const x=player.x+Math.cos(heading)*.50+Math.sin(heading)*.07;
   const z=player.z-Math.sin(heading)*.50+Math.cos(heading)*.07;

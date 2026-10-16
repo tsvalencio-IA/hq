@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node tests/geometry.mjs && node tests/game.mjs",
+    "test": "node tests/geometry.mjs && node tests/game.mjs && node tests/activities.mjs",
     "test:geometry": "node tests/geometry.mjs"
   },
   "devDependencies": {
