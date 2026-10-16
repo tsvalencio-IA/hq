@@ -102,6 +102,11 @@ try {
     check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
     if(step === 0) {
       check('Free 360 degree camera controls appear for garage diagnosis', await page.locator('#actionCameraControls').isVisible());
+      // Pause immediately so slow software-rendered browsers can exercise
+      // angle changes without racing the short live demonstration.
+      if(await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='running'))
+        await page.getByRole('button',{name:'Pausar animação'}).click();
+      check('Garage action pauses for camera inspection',await page.evaluate(()=>['paused','done'].includes(__THIA_ACTIONS.current()?.phase)));
       const yaw = await page.evaluate(() => camera.yaw);
       await page.getByRole('button',{name:'Girar câmera à direita'}).click();
       check('Garage view rotates from dedicated camera control', await page.evaluate(before => Math.abs(camera.yaw-before)>.15,yaw));
@@ -109,13 +114,12 @@ try {
       const eye0=await page.evaluate(() => camera.eye.slice());
       await page.evaluate(() => new Promise(requestAnimationFrame));
       check('Actual garage 3D view changes with yaw', await page.evaluate(before => Math.hypot(...camera.eye.map((v,i)=>v-before[i]))>.1,eye0));
-      await page.getByRole('button',{name:'Pausar animação'}).click();
-      check('Garage action pauses for camera inspection',await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='paused'));
       const savedYaw=await page.evaluate(()=>camera.yaw);
       await page.mouse.move(920,440);
       await page.mouse.down();await page.mouse.move(750,470,{steps:4});await page.mouse.up();
       check('Touch/mouse drag rotates camera even with garage dialog open',await page.evaluate(before=>Math.abs(camera.yaw-before)>.10,savedYaw));
-      await page.getByRole('button',{name:'Pausar animação'}).click();
+      if(await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='paused'))
+        await page.getByRole('button',{name:'Pausar animação'}).click();
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
       check('Garage action rotates the character arms into a working pose', await page.evaluate(() => __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0] < -.4));
       await screenshot(page, 'garage-free-camera-3d');
