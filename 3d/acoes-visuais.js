@@ -12,7 +12,7 @@ const correct={garage:[1,0,1,0],code:[1,2,0,1]};
 const centers={garage:{x:28.7,z:-18.0,face:Math.PI,focus:[29.55,1.65,-19.4]},
  code:{x:-44.5,z:-19.1,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
 const duration=5.2;
-let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0;
+let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0,lastArea=null;
 const label=document.createElement('div');
 label.id='action3dLabel';
 label.setAttribute('aria-live','polite');
@@ -43,7 +43,7 @@ function begin(context,choice,callback){
  scene={...context,choice,correct:choice===correct[context.mode][context.step],
  elapsed:0,from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
  label.textContent=actionNames[context.mode][context.step];
- camera.yaw=.70;camera.pitch=.37;camera.dist=innerWidth<550?8.7:8;
+ if(lastArea!==context.mode){camera.yaw=.70;camera.pitch=.37;camera.dist=innerWidth<550?8.7:8;lastArea=context.mode}
  document.body.classList.add('visual-action-mode');
  shots++;
  return true;

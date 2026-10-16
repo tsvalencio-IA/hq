@@ -137,8 +137,8 @@ function monitor(x,z,stage,p,variant){
  box(x,.99,z+.33,1.1,.055,.36,'#253e50');for(let i=0;i<5;i++)for(let j=0;j<2;j++)box(x-.4+i*.2,1.026,z+.23+j*.14,.12,.015,.08,'#93c5d3');
 }
 function water(x,y,z,t,p){for(let k=0;k<12;k++){const a=(t*1.6+k/12)%1;orb(x+.30*a+.06*Math.sin(k*4),y-.8*a,z-.30*a,.025,'#7ce1f3')}cyl(x-.12,y-.03,z+.04,.19,.25,'#469dbe');beam([x+.02,y+.05,z],[x+.27,y+.12,z-.18],.045,'#469dbe')}
-function drawTask(t){
- if(!work)return;const w=work,[x,z]=w.task.at,stage=w.step,running=['running','paused'].includes(w.phase),p=running?clamp((w.elapsed-1.6)/5,0,1):0,clock=w.phase==='paused'?w.frozenClock??t:t;
+function drawTask(t,display=work){
+ if(!display)return;const w=display,[x,z]=w.task.at,stage=w.step,running=['running','paused'].includes(w.phase),p=running?clamp((w.elapsed-1.6)/5,0,1):0,clock=w.phase==='paused'?w.frozenClock??t:t;
  const completed=n=>stage>n?1:stage===n?p:0,act=running&&w.elapsed>1.6;
  const hand=[x-.05,1.43,z+.52];
  if(w.task.id==='roda'){
@@ -193,7 +193,13 @@ function drawTask(t){
  // A subtle work marker keeps the station readable while changing camera angle.
  E.draw('torus',M.mul(M.tr(x,.20,z+1.35),M.mul(M.rx(Math.PI/2),M.s(.46,.46,.018))),'#e6c771');
 }
-const normalDraw=drawWorld;drawWorld=function(t){normalDraw(t);drawTask(t)};
+const normalDraw=drawWorld;drawWorld=function(t){
+ normalDraw(t);
+ if(!window.__THIA_ACTIONS?.isActive()&&!window.__THIA_BATTERY_TEST?.isActive())for(const task of tasks){
+  const step=progress(task.id);if(step&&work?.task.id!==task.id&&Math.hypot(player.x-task.at[0],player.z-task.at[1])<25)drawTask(t,{task,step,elapsed:0,phase:'preview'});
+ }
+ drawTask(t);
+};
 const normalObjective=updateObjective;
 updateObjective=function(){normalObjective();boardButton.textContent=`📋 Objetivos ${count()}/9`;if(!work&&!ball&&!runQuest){const region=nearest().spot.id,next=tasks.find(t=>t.region===region&&progress(t.id)<3);$('missionTitle').textContent=`📋 ${count()}/9 tarefas concluídas`;$('missionText').textContent=next?`${next.icon} ${next.name} · AÇÃO para escolher uma tarefa.`:'Explore, brinque ou abra Objetivos para escolher sua próxima tarefa.'}};
 const normalMenu=menuDialog;menuDialog=function(){normalMenu();const b=document.createElement('button');b.textContent='📋 Ver os nove objetivos';b.onclick=()=>openBoard('all');$('menuChoices').prepend(b)};$('menuBtn').onclick=menuDialog;

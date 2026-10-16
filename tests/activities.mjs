@@ -64,7 +64,18 @@ try{
   await phone.locator('#objectivesBtn').click();await phone.locator('[data-task="jardim"]').click();await phone.locator('#workDo').click();await phone.evaluate(()=>gameStep(3));await phone.locator('#workDo').click();await frame(phone);
   check(name+': Thamis performs the garden action',await phone.evaluate(()=>state.avatar==='thamis'&&mascotStudio.snapshot.thamis.pose==='garden'));
   await cameraTest(phone,name,viewport);
+  const touch=await context.newCDPSession(phone),distance=await phone.evaluate(()=>camera.dist);
+  const point=(id,x)=>({id,x:viewport.width*x,y:viewport.height*.4});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(1,.45),point(2,.60)]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(1,.36),point(2,.69)]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await frame(phone);
+  check(name+': two-finger pinch zoom works during the action',await phone.evaluate(d=>camera.dist<d-.5,distance));
+  await phone.getByRole('button',{name:'Reenquadrar',exact:true}).click();
   check(name+': panels and buttons fit screen',await phone.evaluate(()=>['workPanel','workCamera'].every(id=>{const r=document.getElementById(id).getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth+1&&r.bottom<=innerHeight+1})&&document.documentElement.scrollWidth<=innerWidth));
+  check(name+': task panel leaves the working avatar visible',await phone.evaluate(()=>{
+   const point=M.project(camera.vp,[player.x,1.7,player.z],E.width,E.height),panels=['workPanel','workCamera'].map(id=>document.getElementById(id).getBoundingClientRect());
+   return point&&point[0]>0&&point[0]<innerWidth&&point[1]>35&&point[1]<innerHeight&&panels.every(r=>point[0]<r.left||point[0]>r.right||point[1]<r.top||point[1]>r.bottom);
+  }));
   await shot(phone,'work-'+name);
   await phone.locator('#workLeave').click();check(name+': cancelled work does not complete a stage',await phone.evaluate(()=>__THIA_WORK.progress('jardim')===0&&!__THIA_WORK.isActive()));
   await phone.evaluate(()=>__THIA_WORK.begin('refeicao'));for(let i=0;i<2;i++)await finishStep(phone);await phone.locator('#workDo').click();await phone.evaluate(()=>gameStep(5));await frame(phone);
