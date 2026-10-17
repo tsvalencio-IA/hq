@@ -257,10 +257,98 @@ function missionObjects(s,t){
   label.style.top=Math.max(75,point[1]-25)+'px';
  }
 }
+
+function stageProps(s,t){
+ const u=clamp01((s.elapsed/duration-.31)/.69),v=smooth(u),glow=s.correct?'#61e9b2':'#f5b46f';
+ const bar=(x,y,z,dx,dy,dz,col)=>E.draw('box',M.tr(x,y,z,dx,dy,dz),col);
+ const rod=(x,y,z,h,col)=>E.draw('cyl',M.tr(x,y,z,.035,h,.035),col);
+ const bulb=(x,y,z,r,col)=>E.draw('sphere',M.tr(x,y,z,r,r,r),col);
+ const cord=(a,b,col)=>{
+  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],len=Math.hypot(dx,dy,dz)||1;
+  const angle=Math.atan2(Math.hypot(dx,dz),dy),heading=Math.atan2(dx,dz);
+  E.draw('cyl',M.mul(M.tr((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2),
+     M.mul(M.ry(heading),M.mul(M.rx(angle),M.s(.024,len/2,.024)))),col);
+ };
+ if(s.mode==='garage'){
+  if(s.step===0){
+   // 1. Multimeter reaches both real terminal objects as the readout climbs.
+   bar(29.50,1.68,-19.60,.40,.24,.29,'#39434e');
+   bulb(29.20,1.91,-19.59,.075,'#e65a56');
+   bulb(29.83,1.91,-19.59,.075,'#25394d');
+   bar(28.84,1.48,-18.65,.27,.22,.13,'#1d5280');
+   bar(28.84,1.63,-18.50,.23,.07,.025,v>.68?glow:'#8cb8d1');
+   cord([28.72,1.53,-18.62],[29.20,1.91+(1-v)*.22,-19.59],'#ef6964');
+   cord([28.96,1.53,-18.62],[29.83,1.91+(1-v)*.18,-19.59],'#25364b');
+   for(let k=0;k<4;k++)bar(28.70+k*.10,1.73,-18.49,.035,.02,.012,k<Math.round(v*4)?glow:'#34475a');
+  }else if(s.step===1){
+   // 2. Alternator/battery are distinct comparison instruments.
+   for(let k=0;k<2;k++){
+    const x=29.03+k*.74;
+    bar(x,1.58,-19.20,.30,.28,.19,k?'#386582':'#23455f');
+    bar(x,1.67,-18.998,.25,.11,.015,k===0?'#8ddffa':v>.55?glow:'#ffd581');
+    for(let j=0;j<4;j++)bar(x-.20+j*.13,1.72,-18.979,.035,.024,.012,j<Math.round((k?v:.8)*4)?'#54e6bb':'#596671');
+   }
+   E.draw('cyl',M.mul(M.tr(29.42,1.55,-18.70),M.mul(M.ry(t*1.4*v),M.s(.17,.048,.17))),'#f1c26b');
+   for(let j=0;j<3;j++)bulb(29.12+j*.29,1.94+Math.sin(t*2+j)*.04,-19.26,.04,glow);
+  }else if(s.step===2){
+   // 3. Ground cable and return circuit; sequential conduction pulses.
+   bar(29.45,1.52,-19.55,.48,.22,.23,'#505864');
+   bar(28.99,1.59,-18.77,.28,.20,.15,'#28577b');
+   cord([28.88,1.69,-18.76],[29.14,1.77,-19.62],'#e96364');
+   cord([29.08,1.67,-18.76],[29.84,1.79,-19.37],'#253444');
+   bulb(29.14,1.77,-19.62,.074,'#d35d49');
+   bulb(29.84,1.79,-19.37,.072,'#d0dfd7');
+   for(let k=0;k<5;k++)if(v>k/5)bulb(29.20+k*.14,1.96,-19.4,.04,glow);
+  }else{
+   // 4. Oxidation visibly disappears under a moving wire brush.
+   bar(29.25,1.62,-19.55,.28,.20,.22,'#4e5964');
+   bar(29.25,1.77,-19.55,.13,.052,.12,v>.7?'#67dfad':'#b36e35');
+   const shift=Math.sin(t*14)*v*.20;
+   cord([28.82,1.93,-19.10],[29.25+shift,1.83,-19.55],'#d5a366');
+   bar(29.25+shift,1.83,-19.55,.11,.07,.08,'#b9c6c5');
+   for(let k=0;k<9;k++)if(v<k/9)bulb(29.08+(k%3)*.13,1.89+Math.floor(k/3)*.075,-19.50,.026,'#aa7843');
+   if(v>.88)for(let k=0;k<3;k++)bulb(29.16+k*.10,1.93,-19.55,.032,'#77f2bb');
+  }
+ }else if(s.step===0){
+  // 5. Review individual file cards then confirm an intact backup.
+  for(let k=0;k<4;k++){
+   const x=-45.75+(k%2)*.39,y=1.72-Math.floor(k/2)*.22;
+   bar(x,y,-20.18,.16,.066,.022,k<Math.floor(v*5)?glow:'#789fc3');
+   bar(x-.055,y,-20.145,.06,.018,.011,'#e5f0f2');
+  }
+  for(let k=0;k<3;k++)bar(-45.79+k*.33,.98+Math.min(k,v*3)*.1,-19.42,.20,.016,.16,'#e4eee9');
+  bulb(-44.77,1.12,-19.51,.12,v>.83?'#7ef0bd':'#e0ae5d');
+ }else if(s.step===1){
+  // 6. A calculator: typed keys and numeric bars change independently.
+  for(let k=0;k<12;k++){
+    const x=-45.78+(k%4)*.27,y=1.79-Math.floor(k/4)*.15;
+    bar(x,y,-20.185,.083,.022,.013,(k+Math.floor(t*8))%6===0?'#f4d680':'#91d9e6');
+  }
+  for(let k=0;k<6;k++)bar(-45.80+(k%3)*.24,.97,-19.53+Math.floor(k/3)*.14,.08,.017,.06,k===Math.floor(t*8)%6?'#f4ca71':'#a6dce1');
+  for(let k=0;k<3;k++)bar(-44.72+k*.15,1.08+k*v*.13,-19.75,.060,.05+k*v*.09,.06,'#f4c778');
+ }else if(s.step===2){
+  // 7. A tangible telephone tilts portrait-to-landscape, rearranging blocks.
+  const angle=-v*Math.PI/2,mid=M.tr(-44.57,1.48,-19.75);
+  E.draw('box',M.mul(mid,M.mul(M.rz(angle),M.s(.16,.28,.04))),'#263b54');
+  E.draw('box',M.mul(M.tr(-44.57,1.48,-19.70),M.mul(M.rz(angle),M.s(.135,.235,.010))),glow);
+  for(let k=0;k<4;k++){
+   const x=-45.73+(v>.5?k*.25:(k%2)*.40),y=1.72-(v>.5?0:Math.floor(k/2)*.19);
+   bar(x,y,-20.190,.095,.045,.013,'#afdcef');
+  }
+ }else{
+  // 8. Tests execute one at a time and remain green on success.
+  for(let k=0;k<5;k++){
+   bar(-45.75,1.79-k*.10,-20.19,.27,.027,.014,'#a1ddea');
+   bulb(-45.31,1.79-k*.10,-20.165,.035,v>(k+1)/5?glow:'#efb96c');
+  }
+  rod(-44.61,1.08+v*.60,-19.72,.10,v>.93?glow:'#ddbb7e');
+  if(v>.90)bulb(-44.61,1.76,-19.72,.13,glow);
+ }
+}
 const normalDraw=drawWorld;
 drawWorld=function(t){
  normalDraw(t);
- if(scene)missionObjects(scene,t);
+ if(scene){missionObjects(scene,t);stageProps(scene,t)}
  if(!scene&&!ball&&!batteryOn()&&started&&!dialogOpen){
   const heading=player.heading;
   const x=player.x+Math.cos(heading)*.50+Math.sin(heading)*.07;
