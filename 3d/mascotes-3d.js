@@ -466,6 +466,42 @@
       'battery:negative-connect': {left:[-1.68,-.83,.22,.22],right:[-.84,-1.06,-.05,-.15],head:.24,lean:.14,rate:6.9,amp:.13,grip:.72,squat:0},
       'battery:verify': {left:[-0.36,-0.32,0.03,0.02],right:[-1.25,-0.71,-0.2,-0.13],head:0.19,lean:0.06,rate:3.1,amp:0.1,grip:0.13,squat:0}
     };
+    // Articulated wrist FK uses exactly the same transform order as Joint.render.
+    // Contact objects are positioned from these world-space wrists, never guessed.
+    function handWorld(root, arm){
+      let node=M.mul(root,M.t(...arm.shoulder.pos));
+      node=M.mul(node,M.mul(M.ry(arm.shoulder.rot[1]),M.mul(M.rx(arm.shoulder.rot[0]),M.rz(arm.shoulder.rot[2]))));
+      node=M.mul(node,M.t(...arm.elbow.pos));
+      node=M.mul(node,M.mul(M.ry(arm.elbow.rot[1]),M.mul(M.rx(arm.elbow.rot[0]),M.rz(arm.elbow.rot[2]))));
+      node=M.mul(node,M.t(...arm.palm.pos));
+      return M.transform(node,[0,-.075,0]);
+    }
+    // Small constrained CCD search: actually reaches the intended component
+    // with each palm, retaining the approved character rig/mesh.
+    function reachHand(root,arm,target){
+      if(!target)return;
+      const joints=[
+        [arm.shoulder,0,-2.55,.38],
+        [arm.shoulder,2,-1.12,1.12],
+        [arm.shoulder,1,-.70,.70],
+        [arm.elbow,0,-2.20,.10]
+      ];
+      const error=()=>{
+        const hand=handWorld(root,arm);
+        return (hand[0]-target[0])**2+(hand[1]-target[1])**2+(hand[2]-target[2])**2;
+      };
+      for(const step of [.40,.21,.10,.048,.021]){
+        for(const [joint,index,min,max] of joints){
+          const before=joint.rot[index];
+          let best=before,dist=error();
+          for(const change of [-step,step]){
+            joint.rot[index]=clamp(before+change,min,max);
+            const e=error();if(e<dist){dist=e;best=joint.rot[index]}
+          }
+          joint.rot[index]=best;
+        }
+      }
+    }
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
@@ -576,9 +612,16 @@
           }
         }
       }
+      if(actionPose && typeof actionPose==='object' && Array.isArray(actionPose.hands)){
+        reachHand(root,rig.arms[0],actionPose.hands[0]);
+        reachHand(root,rig.arms[1],actionPose.hands[1]);
+      }
+      const actualHands=rig.arms.map(a=>handWorld(root,a));
+      const contactErrors=actionPose && typeof actionPose==='object' && Array.isArray(actionPose.hands)
+        ?actualHands.map((p,i)=>actionPose.hands[i]?Math.hypot(...p.map((v,j)=>v-actionPose.hands[i][j])):null):[null,null];
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
+      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, hands:actualHands, contactErrors, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
     }
     function drawDog(id, x, z, heading, move, phase, time, carrying) {
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
