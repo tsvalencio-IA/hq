@@ -8,6 +8,30 @@ const actionNames={
  garage:['Medir bateria e alternador','Comparar tensões no veículo','Testar cabos e aterramentos','Limpar conexão e retestar'],
  code:['Conferir registros e exclusões','Calcular valores no computador','Corrigir a tela para celular','Executar os testes do sistema']
 };
+const stageWork={
+ garage:[
+  {x:29.39,z:-19.05,hands:[[29.77,1.88,-19.59],[29.20,1.88,-19.59]],tool:'probes'},
+  {x:29.39,z:-19.05,hands:[[29.77,1.72,-19.20],[29.03,1.72,-19.20]],tool:'dial'},
+  {x:29.39,z:-19.05,hands:[[29.83,1.79,-19.37],[29.14,1.77,-19.62]],tool:'ground'},
+  {x:29.39,z:-19.05,hands:[[29.52,1.77,-19.28],[29.25,1.83,-19.55]],tool:'brush'}
+ ],
+ code:[
+  {x:-45.35,z:-19.55,hands:[[-45.16,1.62,-20.04],[-45.65,1.48,-19.77]],tool:'files'},
+  {x:-45.35,z:-19.54,hands:[[-45.12,1.29,-19.70],[-45.58,1.29,-19.70]],tool:'keyboard'},
+  {x:-44.99,z:-19.50,hands:[[-44.59,1.48,-19.75],[-45.29,1.63,-20.02]],tool:'phone'},
+  {x:-45.35,z:-19.54,hands:[[-45.13,1.36,-19.69],[-45.58,1.64,-20.02]],tool:'tests'}
+ ]
+};
+function stageHands(s){
+ const positions=stageWork[s.mode][s.step].hands.map(v=>v.slice());
+ const t=s.elapsed;
+ if(s.mode==='garage'&&s.step===3)positions[1][0]+=.10*Math.sin(t*12);
+ if(s.mode==='code'&&s.step===1){
+  positions[0][0]+=.065*Math.sin(t*13);positions[1][0]+=.065*Math.sin(t*13+1.9);
+ }
+ if(s.mode==='code'&&s.step===2)positions[0][1]+=.025*Math.sin(t*4);
+ return positions;
+}
 const correct={garage:[1,0,1,0],code:[1,2,0,1]};
 const actionPrograms={
  garage:['garage:meter','garage:compare','garage:ground','garage:clean'],
@@ -91,7 +115,8 @@ function actionContext(){
 }
 function begin(context,choice,callback){
  if(scene||batteryOn())return false;
- const area=centers[context.mode],from={x:player.x,z:player.z,heading:player.heading},
+ const spec=stageWork[context.mode][context.step];
+ const area={...centers[context.mode],x:spec.x,z:spec.z},from={x:player.x,z:player.z,heading:player.heading},
  companion={x:partner.x,z:partner.z,heading:partner.heading,moving:partner.moving},
  cameraBefore={yaw:camera.yaw,pitch:camera.pitch,dist:camera.dist};
  // Walk into the actual world work area, and preserve the user's position
@@ -180,7 +205,7 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
   const walking=scene.elapsed<duration*.17;
   const acting=scene.elapsed>duration*.17;
   const phase=clamp01((scene.elapsed/duration-.17)/.83);
-  const pose=acting?{kind:scene.poseKey,progress:phase}:null;
+  const pose=acting?{kind:scene.poseKey,progress:phase,hands:stageHands(scene)}:null;
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
     acting?scene.elapsed*2:t,0,0,0,pose);
  }
@@ -340,7 +365,7 @@ drawWorld=function(t){
 };
 window.__THIA_ACTIONS={
  isActive:()=>!!scene,
- current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,poseKey:scene.poseKey,elapsed:scene.elapsed,phase:scene.phase}:null,
+ current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,poseKey:scene.poseKey,elapsed:scene.elapsed,phase:scene.phase,targets:stageHands(scene)}:null,
  stagedActions:actionNames,
  programs:actionPrograms,
  count:()=>shots,
