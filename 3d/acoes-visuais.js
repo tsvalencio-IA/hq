@@ -37,7 +37,7 @@ cameraControls.innerHTML=`<strong>CÂMERA 360°</strong><small>Arraste a cena ou
 <button type="button" data-camera="out" aria-label="Afastar câmera">－</button>
 </div><button type="button" class="cameraHome" data-camera="reset">Enquadrar</button>`;
 document.getElementById('game').appendChild(cameraControls);
-const cameraDefault={yaw:.72,pitch:.29,dist:8.4};
+const cameraDefault={yaw:1.50,pitch:.34,dist:6.9};
 cameraControls.addEventListener('click',event=>{
  const control=event.target.closest('button[data-camera]');if(!control||!(scene||batteryOn()))return;
  switch(control.dataset.camera){
@@ -47,7 +47,7 @@ cameraControls.addEventListener('click',event=>{
   case 'down':camera.pitch=Math.max(.08,camera.pitch-.14);break;
   case 'in':camera.dist=Math.max(4.3,camera.dist-1.25);break;
   case 'out':camera.dist=Math.min(25,camera.dist+1.25);break;
-  case 'reset':Object.assign(camera,batteryOn()?{yaw:.46,pitch:.30,dist:9.7}:cameraDefault);break;
+  case 'reset':Object.assign(camera,batteryOn()?{yaw:1.48,pitch:.35,dist:7.2}:cameraDefault);break;
  }
 });
 const playback=document.createElement('div');
