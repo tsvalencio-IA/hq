@@ -627,7 +627,10 @@
           }
           rig.head.rot[0]=pose.head+.025*Math.sin(clock*.25);
           rig.head.rot[1]=.08*Math.sin(clock*.21);
-          root=M.mul(root,M.rx(pose.lean*strength));
+          // Contact IK must keep the torso behind the tool; excessive lean
+           // pushes wrists beyond the reachable terminal/keyboard zone.
+           const contacting=Array.isArray(actionPose.hands);
+           root=M.mul(root,M.rx(pose.lean*strength*(contacting?.16:1)));
           if(pose.squat){
             root=M.mul(root,M.t(0,-pose.squat*strength,0));
             for(const leg of rig.legs){
