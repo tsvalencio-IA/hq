@@ -97,6 +97,15 @@ try {
   check('Every garage answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.garage.length === 4));
   const initialPosition = await page.evaluate(() => ({x:player.x,z:player.z}));
   const garageMotionSignatures=[];
+  const actualWristDistances=[];
+  const physicalWristErrors = () => page.evaluate(() => {
+    const snap=__THIA_TEST.mascotStudio.snapshot[state.avatar];
+    if(!snap?.handPositions||!snap?.handTargets)return null;
+    return snap.handPositions.map((p,i)=>{
+      const t=snap.handTargets[i];
+      return !t?null:Math.hypot(p[0]-t[0],p[1]-t[1],p[2]-t[2]);
+    });
+  });
   for (const [step,answer] of [1,0,1,0].entries()) {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
@@ -135,6 +144,9 @@ try {
     check('Garage action remains available for inspection after performance',await page.evaluate(()=>__THIA_ACTIONS.isActive()));
     await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
     garageMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
+    const distances=await physicalWristErrors();
+    check('Garage step '+(step+1)+' hands follow physical tools',Array.isArray(distances)&&distances.length===2&&distances.every(d=>Number.isFinite(d)&&d<.55));
+    actualWristDistances.push({task:'garage-'+(step+1),distances});
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
@@ -174,6 +186,9 @@ try {
     },i);
     await page.waitForFunction(key=>__THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===key,expected);
     batteryFrames.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(a=>Math.round(a[0]*100)/100))));
+    const reach=await physicalWristErrors();
+    check('Battery procedure '+i+' has actual reachable wrist positions',Array.isArray(reach)&&reach.every(d=>Number.isFinite(d)&&d<.75));
+    actualWristDistances.push({task:'battery-'+i,distances:reach});
   }
   check('Nine successive battery procedures have distinct joint poses',new Set(batteryFrames).size===9);
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
@@ -204,6 +219,9 @@ try {
     await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
     await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
     technologyMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
+    const distances=await physicalWristErrors();
+    check('Technology step '+(step+1)+' hands reach task equipment',Array.isArray(distances)&&distances.length===2&&distances.every(d=>Number.isFinite(d)&&d<.55));
+    actualWristDistances.push({task:'technology-'+(step+1),distances});
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
@@ -265,6 +283,7 @@ try {
   }
   check('No uncaught JavaScript or console errors', errors.length === 0);
   check('No failed asset requests', failedRequests.length === 0);
+  console.log('PHYSICAL_WRIST_GAPS '+JSON.stringify(actualWristDistances));
   fs.writeFileSync(new URL('report.json', output), JSON.stringify({ result: 'passed', checks, deliveries, errors, failedRequests }, null, 2));
   console.log(JSON.stringify({ result: 'passed', checks: checks.length, deliveries }));
 } catch (error) {
