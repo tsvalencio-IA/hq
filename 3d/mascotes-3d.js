@@ -511,6 +511,8 @@
           });
         }
       }
+      // Never retain the previous task's head tilt on returning to free roam.
+      rig.head.rot[0] = 0;
       rig.head.rot[1] = Math.sin(time * .78) * (walk ? .02 : .055);
       rig.head.rot[2] = Math.sin(time * 1.6) * .012;
       if (rig.pony) { rig.pony.rot[0] = walk * Math.sin(time * frequency + .7) * .09; rig.pony.rot[2] = walk * Math.sin(time * frequency) * .06; }
