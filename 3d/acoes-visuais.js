@@ -9,9 +9,13 @@ const actionNames={
  code:['Conferir registros e exclusões','Calcular valores no computador','Corrigir a tela para celular','Executar os testes do sistema']
 };
 const correct={garage:[1,0,1,0],code:[1,2,0,1]};
+const actionPrograms={
+ garage:['garage:meter','garage:compare','garage:ground','garage:clean'],
+ code:['code:review','code:calculate','code:responsive','code:tests']
+};
 const centers={garage:{x:28.7,z:-18.0,face:Math.PI,focus:[29.55,1.65,-19.4]},
  code:{x:-44.5,z:-19.1,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
-const duration=2.05;
+const duration=4.5;
 let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0;
 const label=document.createElement('div');
 label.id='action3dLabel';
@@ -94,7 +98,7 @@ function begin(context,choice,callback){
  // when each stage finishes. No game-progress state is changed here.
  player.x=area.x-1.6;player.z=area.z+1.5;player.heading=area.face;
  partner.x=area.x+1.2;partner.z=area.z+1.1;partner.heading=area.face;
- scene={...context,choice,correct:choice===correct[context.mode][context.step],
+ scene={...context,choice,poseKey:actionPrograms[context.mode][context.step],correct:choice===correct[context.mode][context.step],
  elapsed:0,phase:'running',from,companion,cameraBefore,area,callback,startedAt:state.time,startedWall:performance.now()};
  Object.assign(camera,cameraDefault);
  label.textContent=actionNames[context.mode][context.step];
@@ -172,11 +176,13 @@ const normalPerson=person;
 person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(batteryOn())return normalPerson(id,x,z,heading,move,run,jump,t,throwing);
  if(scene){
-  const walking=scene.elapsed<duration*.33&&id===state.avatar;
-  const working=scene.elapsed>duration*.33&&(scene.elapsed<duration*.94||scene.phase==='done');
-  return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,t,0,0,
-    working?(id===state.avatar?(.75+.18*Math.sin(t*7)):.45):0,
-    working?(scene.correct?'operate':'think'):null);
+  if(id!==state.avatar)return normalPerson(id,x,z,heading,0,false,0,t,0);
+  const walking=scene.elapsed<duration*.33;
+  const acting=scene.elapsed>duration*.33;
+  const phase=clamp01((scene.elapsed/duration-.33)/.67);
+  const pose=acting?{kind:scene.poseKey,progress:phase}:null;
+  return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
+    acting?scene.elapsed*2:t,0,0,0,pose);
  }
  if(id===state.avatar&&pickup){
   return mascotStudio.drawHuman(id,x,z,heading,move,run,jump,t,throwing,0,0,'pickup');
@@ -275,8 +281,9 @@ drawWorld=function(t){
 };
 window.__THIA_ACTIONS={
  isActive:()=>!!scene,
- current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,elapsed:scene.elapsed,phase:scene.phase}:null,
+ current:()=>scene?{mode:scene.mode,step:scene.step,choice:scene.choice,poseKey:scene.poseKey,elapsed:scene.elapsed,phase:scene.phase}:null,
  stagedActions:actionNames,
+ programs:actionPrograms,
  count:()=>shots,
  pickupStar:(x,z)=>{if(!scene)pickup={x,z,life:1.05}},
  raceCheckpoint:(x,z)=>{checkpoint={x,z,life:.9}},
