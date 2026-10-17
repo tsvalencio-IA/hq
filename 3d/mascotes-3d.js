@@ -466,6 +466,42 @@
       'battery:negative-connect': {left:[-1.68,-.83,.22,.22],right:[-.84,-1.06,-.05,-.15],head:.24,lean:.14,rate:6.9,amp:.13,grip:.72,squat:0},
       'battery:verify': {left:[-0.36,-0.32,0.03,0.02],right:[-1.25,-0.71,-0.2,-0.13],head:0.19,lean:0.06,rate:3.1,amp:0.1,grip:0.13,squat:0}
     };
+    // Two-bone inverse kinematics points the actual existing shoulder, elbow
+    // and palm joints at the workpiece; rig meshes and approved faces are untouched.
+    // No per-frame new geometry or duplicated puppet actors.
+    function reachToWork(rig, arm, target, x, z, heading, jump, lean=0, squat=0) {
+      if(!Array.isArray(target)||target.length!==3)return;
+      const scale=rig.scale;
+      const wx=(target[0]-x)/scale,wz=(target[2]-z)/scale;
+      const c=Math.cos(heading),sn=Math.sin(heading);
+      const alongZ=sn*wx+c*wz;
+      const lx=c*wx-sn*wz;
+      const altitude=(target[1]-jump+.06)/scale;
+      // Undo the upper-body lean before solving the joint chain.
+      const lz=-Math.sin(lean)*altitude+Math.cos(lean)*alongZ;
+      const ly=Math.cos(lean)*altitude+Math.sin(lean)*alongZ+squat;
+      const xSide=arm.shoulder.pos[0];
+      const dx=lx-xSide,dz=lz,down=arm.shoulder.pos[1]-ly;
+      const horizontal=Math.hypot(dx,dz);
+      const L1=.305,L2=.445;
+      const dist=clamp(Math.hypot(horizontal,down),.08,L1+L2-.012);
+      const beta=Math.acos(clamp((dist*dist-L1*L1-L2*L2)/(2*L1*L2),-1,1));
+      const alpha=Math.atan2(horizontal,down)-Math.atan2(L2*Math.sin(beta),L1+L2*Math.cos(beta));
+      arm.shoulder.rot[1]=Math.atan2(dx,dz);
+      arm.shoulder.rot[0]=-alpha;
+      arm.shoulder.rot[2]=0;
+      arm.elbow.rot[0]=-beta;
+      arm.palm.rot[0]=0;
+      arm.palm.rot[1]=0;
+      for(const finger of arm.fingers){finger.rot[0]=-.48;finger.rot[2]=0}
+    }
+    function handPosition(arm,root){
+      const jointMat=(parent,joint)=>M.mul(parent,M.mul(M.t(...joint.pos),M.mul(M.ry(joint.rot[1]),M.mul(M.rx(joint.rot[0]),M.rz(joint.rot[2])))));
+      const shoulder=jointMat(root,arm.shoulder);
+      const elbow=jointMat(shoulder,arm.elbow);
+      const palm=jointMat(elbow,arm.palm);
+      return M.transform(palm,[0,-.105,0]);
+    }
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
@@ -479,6 +515,7 @@
         l.ankle.rot[0] = -l.knee.rot[0] * .32 - l.hip.rot[0] * .18;
       }
       for (const a of rig.arms) {
+        a.shoulder.rot[1] = 0;
         a.shoulder.rot[0] = -gait * a.sign * walk * (run ? .65 : .42) - (throwing && a.sign === 1 ? Math.sin(throwing * PI) * 2.0 : 0);
         a.shoulder.rot[2] = -a.sign * (.07 + Math.sin(time * 1.6) * .014);
         a.elbow.rot[0] = -(run && walk ? .85 : .16) - Math.max(0, gait * a.sign) * walk * .18;
@@ -574,11 +611,17 @@
               leg.ankle.rot[0]=-.19*strength;
             }
           }
+          // Real hand-to-object tracking takes precedence over canned gestures.
+          if(actionPose.hands){
+            const targets=actionPose.hands;
+            for(let k=0;k<rig.arms.length;k++)
+              reachToWork(rig,rig.arms[k],targets[k],x,z,heading,jump,pose.lean*strength,pose.squat*strength);
+          }
         }
       }
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
+      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, handWorld:rig.arms.map(a=>handPosition(a,root)), armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
     }
     function drawDog(id, x, z, heading, move, phase, time, carrying) {
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
