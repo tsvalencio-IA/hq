@@ -100,6 +100,18 @@ renderSkyAndView=function(){
  camera.vp=M.mul(M.perspective(PI/3.12,w/Math.max(1,h),.1,240),M.lookAt(eye,target));
  E.begin(camera.vp,eye);
 };
+// One shared continuous trajectory drives both the battery mesh and both
+// wrists. A lifted battery never moves independently of its carrying hands.
+const bay=[29.40,1.52,-19.46],carry=[28.96,1.28,-18.75],
+ oldBench=[28.65,.78,-18.13],newBench=[28.65,.78,-18.72];
+function batteryTravel(i,p){
+ let oldAt=bay,newAt=newBench;
+ if(i===5)oldAt=p<.5?position(p*2,bay,carry):position((p-.5)*2,carry,oldBench);
+ else if(i>5)oldAt=oldBench;
+ if(i===6)newAt=p<.5?position(p*2,newBench,carry):position((p-.5)*2,carry,bay);
+ else if(i>6)newAt=bay;
+ return {oldAt,newAt};
+}
 const originalPerson=person;
 person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(work&&id===state.avatar){
@@ -118,7 +130,13 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
     [[29.18,1.70,-19.17],[29.57,1.69,-19.17]],
     [[29.16,1.72,-19.16],[29.57,1.70,-19.17]]
   ];
-  const pose=walking?null:{kind:key,progress:phase.p,targets:physicalTargets[Math.min(phase.i,10)]};
+  let targets=physicalTargets[Math.min(phase.i,10)];
+  if(phase.i===5||phase.i===6){
+    const b=phase.i===5?batteryTravel(phase.i,phase.p).oldAt:batteryTravel(phase.i,phase.p).newAt;
+    // Each hand grips one side of the same translating three-dimensional case.
+    targets=[[b[0]-.20,b[1]+.17,b[2]+.10],[b[0]+.20,b[1]+.17,b[2]+.10]];
+  }
+  const pose=walking?null:{kind:key,progress:phase.p,targets};
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
      walking?t:work.elapsed*2,0,0,0,pose);
  }
@@ -146,18 +164,11 @@ function drawWorkshop(){
  const hood=M.mul(hinge,M.mul(M.t(0,0,1.07),M.s(1.13,.05,1.11)));
  E.draw('box',hood,'#386b9b');
  // Bateria de origem do compartimento para as mãos e para a bancada
- const inBay=[29.40,1.52,-19.46],held=[28.80,1.30,-18.42],oldShelf=[28.25,.78,-18.06];
- const newShelf=[28.25,.78,-18.72];
- let oldAt=inBay,newAt=newShelf;
- // Removing and placing batteries are now distinct continuous motions.
- if(i===5)oldAt=p<.5?position(p*2,inBay,held):position((p-.5)*2,held,oldShelf);
- else if(i>5)oldAt=oldShelf;
- if(i===6)newAt=p<.5?position(p*2,newShelf,held):position((p-.5)*2,held,inBay);
- else if(i>6)newAt=inBay;
+ const {oldAt,newAt}=batteryTravel(i,p);
  battery(...oldAt,'#3b4149');
  battery(...newAt,'#1d65a2');
- drawBox(28.25,.43,-18.36,1.30,.09,1.35,'#a47750');
- for(const dx of[-.45,.45])for(const dz of[-.48,.48])drawBox(28.25+dx,.22,-18.36+dz,.07,.24,.07,'#4c5659');
+ drawBox(28.65,.43,-18.36,1.30,.09,1.35,'#a47750');
+ for(const dx of[-.45,.45])for(const dz of[-.48,.48])drawBox(28.65+dx,.22,-18.36+dz,.07,.24,.07,'#4c5659');
  // bornes e terminais têm estado visual de desconectado durante o procedimento
  // Positive and negative terminals disconnect and reconnect at their own step.
  if(i<3||i>=8)drawOrb(29.18,1.92,-19.63,.10,'#d64a45');
