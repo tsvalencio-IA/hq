@@ -445,6 +445,25 @@
 
     const rigs = { thiago: human('thiago'), thamis: human('thamis'), luna: dog('luna'), liz: dog('liz') };
     const snapshot = {};
+    // Dedicated motion programs for distinct physical procedures.
+    const activityPoses = {
+      'garage:meter': {left:[-1.05,-0.65,-0.12,-0.2],right:[-1.56,-0.83,-0.2,-0.12],head:0.29,lean:0.11,rate:6.1,amp:0.06,grip:0.62,squat:0},
+      'garage:compare': {left:[-0.72,-1.06,-0.05,0.18],right:[-1.24,-0.72,-0.06,0.3],head:0.2,lean:0.03,rate:3.6,amp:0.13,grip:0.32,squat:0},
+      'garage:ground': {left:[-1.65,-0.54,0.29,-0.24],right:[-1.65,-0.83,-0.28,0.25],head:0.28,lean:0.17,rate:5,amp:0.09,grip:0.72,squat:0},
+      'garage:clean': {left:[-0.94,-1.08,-0.05,-0.18],right:[-1.69,-0.73,-0.13,-0.35],head:0.39,lean:0.23,rate:12,amp:0.22,grip:0.86,squat:0},
+      'code:review': {left:[-0.77,-1.08,-0.1,0.04],right:[-1.43,-0.39,-0.28,0.27],head:0.08,lean:0.05,rate:3.5,amp:0.09,grip:0.18,squat:0},
+      'code:calculate': {left:[-1.19,-0.93,0.16,0.12],right:[-1.26,-0.98,-0.13,-0.08],head:0.3,lean:0.14,rate:13,amp:0.17,grip:0.27,squat:0},
+      'code:responsive': {left:[-1,-1.22,0.04,0.33],right:[-1.6,-0.66,-0.32,-0.27],head:0.09,lean:-0.05,rate:4,amp:0.11,grip:0.46,squat:0},
+      'code:tests': {left:[-1.2,-0.58,0.22,-0.04],right:[-1.36,-0.76,-0.17,0.16],head:0.11,lean:0.08,rate:8,amp:0.15,grip:0.39,squat:0},
+      'battery:hood': {left:[-2.04,-0.43,0.24,-0.16],right:[-2.01,-0.49,-0.19,0.14],head:-0.18,lean:-0.1,rate:2.5,amp:0.15,grip:0.8,squat:0},
+      'battery:negative': {left:[-0.63,-1.13,-0.02,0.17],right:[-1.7,-0.55,-0.08,-0.2],head:0.32,lean:0.2,rate:8.5,amp:0.12,grip:0.73,squat:0},
+      'battery:positive': {left:[-1.73,-0.52,0.22,-0.13],right:[-0.83,-1.06,-0.07,0.21],head:0.24,lean:0.12,rate:7.9,amp:0.14,grip:0.76,squat:0},
+      'battery:clamp': {left:[-1.08,-0.93,0.16,-0.14],right:[-1.84,-0.56,-0.18,-0.19],head:0.39,lean:0.25,rate:10,amp:0.18,grip:0.86,squat:0},
+      'battery:remove': {left:[-1.58,-0.48,0.11,-0.1],right:[-1.52,-0.49,-0.13,-0.1],head:0.33,lean:0.2,rate:3.2,amp:0.07,grip:0.9,squat:0.28},
+      'battery:install': {left:[-1.55,-0.49,0.14,-0.12],right:[-1.59,-0.49,-0.12,0.13],head:0.29,lean:0.19,rate:3.3,amp:0.08,grip:0.9,squat:0.22},
+      'battery:fix': {left:[-1.17,-0.87,0.08,-0.18],right:[-1.77,-0.65,-0.17,0.31],head:0.31,lean:0.18,rate:9.7,amp:0.13,grip:0.87,squat:0},
+      'battery:verify': {left:[-0.36,-0.32,0.03,0.02],right:[-1.25,-0.71,-0.2,-0.13],head:0.19,lean:0.06,rate:3.1,amp:0.1,grip:0.13,squat:0}
+    };
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
@@ -521,9 +540,41 @@
       } else if (actionPose === 'greet') {
         rig.head.rot[1] = .13;
       }
+      if (actionPose && typeof actionPose === 'object') {
+        const pose = activityPoses[actionPose.kind];
+        if (pose) {
+          const u=clamp(actionPose.progress ?? 0,0,1);
+          const strength=clamp(u*5,0,1)*clamp((1-u)*5,0,1);
+          const clock=time*pose.rate;
+          for(let i=0;i<rig.arms.length;i++){
+            const arm=rig.arms[i],v=i===0?pose.left:pose.right;
+            const pulse=Math.sin(clock+i*1.8)*pose.amp*strength;
+            arm.shoulder.rot[0]=v[0]+pulse;
+            arm.elbow.rot[0]=v[1]-.5*pulse;
+            arm.shoulder.rot[2]=v[2]*arm.sign;
+            arm.palm.rot[0]=v[3]+pulse*(i?1.5:-.8);
+            arm.palm.rot[1]=.13*Math.cos(clock*.42+i);
+            arm.fingers.forEach((finger,j)=>{
+              finger.rot[0]=-(pose.grip*.73+j*.028)+Math.max(0,Math.sin(clock+j*.5+i))*.09;
+              finger.rot[2]=(j-1.5)*.016;
+            });
+          }
+          rig.head.rot[0]=pose.head+.025*Math.sin(clock*.25);
+          rig.head.rot[1]=.08*Math.sin(clock*.21);
+          root=M.mul(root,M.rx(pose.lean*strength));
+          if(pose.squat){
+            root=M.mul(root,M.t(0,-pose.squat*strength,0));
+            for(const leg of rig.legs){
+              leg.hip.rot[0]=-.32*strength;
+              leg.knee.rot[0]=.76*strength;
+              leg.ankle.rot[0]=-.19*strength;
+            }
+          }
+        }
+      }
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, jump, joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
+      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
     }
     function drawDog(id, x, z, heading, move, phase, time, carrying) {
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
