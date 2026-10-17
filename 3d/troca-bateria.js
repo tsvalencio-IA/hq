@@ -85,7 +85,18 @@ gameStep=function(dt){
  if(work.elapsed<total){
   work.elapsed=Math.min(total,work.elapsed+dt);
   const phase=findPhase(work.elapsed);
-  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.20,u);player.z=lerp(-15.4,-18.60,u);player.heading=Math.atan2(2.9,-2.15);}else{player.x=29.20;player.z=-18.60;player.heading=Math.PI;}
+  if(phase.i===0){
+    const u=ease(phase.p);
+    player.x=lerp(26.2,29.20,u);player.z=lerp(-15.4,-18.60,u);
+    player.heading=Math.atan2(2.9,-2.15);
+  }else if(phase.i===5||phase.i===6){
+    // Move with the lifted battery between the engine bay and near workbench.
+    const u=phase.i===5?ease(phase.p):1-ease(phase.p);
+    player.x=lerp(29.20,28.85,u);player.z=lerp(-18.60,-17.93,u);
+    player.heading=Math.PI;
+  }else{
+    player.x=29.20;player.z=-18.60;player.heading=Math.PI;
+  }
   if(phase.i!==work.lastStep){work.lastStep=phase.i;refreshPanel()}
   document.getElementById('batteryProgress').style.width=Math.round(100*work.elapsed/total)+'%';
  }
@@ -136,7 +147,8 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
     // Each hand grips one side of the same translating three-dimensional case.
     targets=[[b[0]-.20,b[1]+.17,b[2]+.10],[b[0]+.20,b[1]+.17,b[2]+.10]];
   }
-  const pose=walking?null:{kind:key,progress:phase.p,targets};
+  // The left arm is rigs[0] (world +X when facing the engine).
+  const pose=walking?null:{kind:key,progress:phase.p,targets:[targets[1],targets[0]]};
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
      walking?t:work.elapsed*2,0,0,0,pose);
  }
