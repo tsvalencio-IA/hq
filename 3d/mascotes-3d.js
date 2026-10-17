@@ -466,6 +466,24 @@
       'battery:negative-connect': {left:[-1.68,-.83,.22,.22],right:[-.84,-1.06,-.05,-.15],head:.24,lean:.14,rate:6.9,amp:.13,grip:.72,squat:0},
       'battery:verify': {left:[-0.36,-0.32,0.03,0.02],right:[-1.25,-0.71,-0.2,-0.13],head:0.19,lean:0.06,rate:3.1,amp:0.1,grip:0.13,squat:0}
     };
+    function jointMatrix(parent,joint){
+      return M.mul(M.mul(M.mul(M.mul(parent,M.t(...joint.pos)),M.ry(joint.rot[1])),M.rx(joint.rot[0])),M.rz(joint.rot[2]));
+    }
+    function handWorld(root,arm){
+      const elbow=jointMatrix(jointMatrix(root,arm.shoulder),arm.elbow);
+      return M.transform(jointMatrix(elbow,arm.palm),[0,-.095,.025]);
+    }
+    function reachHand(root,arm,target){
+      const joints=[[arm.shoulder,0],[arm.shoulder,2],[arm.elbow,0]];
+      const err=()=>{const p=handWorld(root,arm);return (p[0]-target[0])**2+(p[1]-target[1])**2+(p[2]-target[2])**2};
+      for(let n=0;n<22;n++)for(const [j,k] of joints){
+        const base=j.rot[k],delta=.015;
+        j.rot[k]=base+delta;const up=err();
+        j.rot[k]=base-delta;const down=err();
+        j.rot[k]=Math.max(-2.8,Math.min(k===0?.4:1.5,base-(up-down)/(.03)*1.1));
+      }
+      return handWorld(root,arm);
+    }
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
       let root = M.mul(M.tr(x, jump - .06 + bob, z), M.mul(M.ry(heading), M.s(rig.scale, rig.scale, rig.scale)));
@@ -576,9 +594,15 @@
           }
         }
       }
+      if(actionPose&&typeof actionPose==='object'&&Array.isArray(actionPose.targets)){
+        for(let k=0;k<rig.arms.length;k++){
+          const goal=actionPose.targets[k];
+          if(Array.isArray(goal))reachHand(root,rig.arms[k],goal);
+        }
+      }
       E.contactShadow(x, z, .52, .42, jump);
       rig.root.render(root);
-      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
+      snapshot[id] = { x, z, heading, move: walk, jump, actionPose: typeof actionPose === 'object' && actionPose ? actionPose.kind : actionPose, handPositions:rig.arms.map(a=>handWorld(root,a)), handTargets: actionPose&&typeof actionPose==='object'?actionPose.targets:null, armAngles: rig.arms.map(a=>[a.shoulder.rot[0],a.elbow.rot[0],a.palm.rot[0]]), joints: rig.legs.map(l => l.hip.rot[0]), head: rig.head.rot.slice() };
     }
     function drawDog(id, x, z, heading, move, phase, time, carrying) {
       const rig = rigs[id], walk = clamp(move, 0, 1), t = time * 12 + phase;
