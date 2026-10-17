@@ -96,10 +96,12 @@ try {
   await page.evaluate(() => __THIA_TEST.openLocation('garage'));
   check('Every garage answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.garage.length === 4));
   const initialPosition = await page.evaluate(() => ({x:player.x,z:player.z}));
+  const garageMotionSignatures=[];
   for (const [step,answer] of [1,0,1,0].entries()) {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'garage' && __THIA_ACTIONS.current()?.step === step, step);
     check('Garage step ' + (step+1) + ' plays in the 3D world', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
+    check('Garage step ' + (step+1) + ' uses its own animation', await page.evaluate(step=>__THIA_ACTIONS.current()?.poseKey===__THIA_ACTIONS.programs.garage[step],step));
     if(step === 0) {
       check('Free 360 degree camera controls appear for garage diagnosis', await page.locator('#actionCameraControls').isVisible());
       // Pause immediately so slow software-rendered browsers can exercise
@@ -130,10 +132,13 @@ try {
     }
     await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
     check('Garage action remains available for inspection after performance',await page.evaluate(()=>__THIA_ACTIONS.isActive()));
+    await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
+    garageMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
   check('Garage mission completes', await page.evaluate(() => state.medals.garage === true));
+  check('Four garage steps have different articulated arm silhouettes',new Set(garageMotionSignatures).size===4);
   check('Garage actions preserve player position', await page.evaluate(p => Math.abs(player.x-p.x)<.001 && Math.abs(player.z-p.z)<.001, initialPosition));
   await page.locator('#closeDialog').click();
   // Regression: the standalone battery animation must not alter garage choices
@@ -143,6 +148,10 @@ try {
   const positionBeforeBattery = await page.evaluate(() => ({ x: player.x, z: player.z }));
   await page.locator('[data-battery-training]').click();
   check('Animated battery workshop activates', await page.evaluate(() => window.__THIA_BATTERY_TEST?.isActive() === true));
+  check('Every battery service stage is mapped to a specific gesture',await page.evaluate(()=>{
+    const programs=__THIA_BATTERY_TEST.poses;
+    return programs.length===11&&new Set(programs.slice(1)).size>=9&&programs.every(p=>p.startsWith('battery:'));
+  }));
   check('Common 360 camera controls are available during battery replacement',await page.locator('#actionCameraControls').isVisible());
   const batteryYaw=await page.evaluate(()=>camera.yaw);
   await page.getByRole('button',{name:'Girar câmera à esquerda'}).click();
@@ -150,6 +159,22 @@ try {
   const startX = await page.evaluate(() => player.x);
   await page.evaluate(() => gameStep(.9)); // invokes workshop wrapper, not original test helper
   check('Mechanic walks toward the vehicle', await page.evaluate(startX => player.x > startX, startX));
+  // Midpoints of removal and placement have different physical parts and poses.
+  const batteryFrames=[];
+  for(const i of [2,3,4,5,6,7,8,9,10]){
+    const expected=await page.evaluate(i=>{
+      const t=__THIA_BATTERY_TEST;
+      const stageStart=t.steps.slice(0,i).reduce((sum,s)=>sum+s[2],0);
+      const target=stageStart+t.steps[i][2]/2;
+      const current=t.steps.slice(0,t.phase().i).reduce((sum,s)=>sum+s[2],0)
+        +(t.phase().p*(t.steps[t.phase().i]?.[2]||0));
+      t.advance(Math.max(0,target-current));
+      return t.poses[i];
+    },i);
+    await page.waitForFunction(key=>__THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===key,expected);
+    batteryFrames.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(a=>Math.round(a[0]*100)/100))));
+  }
+  check('Nine successive battery procedures have distinct joint poses',new Set(batteryFrames).size===9);
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
   check('Battery workshop completes 11 visible steps', await page.locator('#batteryStepTitle').innerText().then(t => t.includes('concluído')));
   await screenshot(page, 'battery-workshop');
@@ -157,10 +182,12 @@ try {
   check('Exiting the workshop restores the world and avatar', await page.evaluate(position => !window.__THIA_BATTERY_TEST.isActive() && Math.abs(player.x - position.x) < .001 && Math.abs(player.z - position.z) < .001, positionBeforeBattery));
   await page.evaluate(() => __THIA_TEST.openLocation('code'));
   check('Every technology answer has a 3D action controller', await page.evaluate(() => __THIA_ACTIONS.stagedActions.code.length === 4));
+  const technologyMotionSignatures=[];
   for (const [step,answer] of [1,2,0,1].entries()) {
     await page.locator('#dialogActions button.choice').nth(answer).click();
     await page.waitForFunction(step => __THIA_ACTIONS.current()?.mode === 'code' && __THIA_ACTIONS.current()?.step === step, step);
     check('Technology step ' + (step+1) + ' plays on the 3D workstation', await page.evaluate(() => document.body.classList.contains('visual-action-mode') && !!__THIA_ACTIONS.current()));
+    check('Technology step ' + (step+1) + ' uses its own animation',await page.evaluate(step=>__THIA_ACTIONS.current()?.poseKey===__THIA_ACTIONS.programs.code[step],step));
     if(step === 1) {
       const before=await page.evaluate(()=>({pitch:camera.pitch,dist:camera.dist}));
       await page.getByRole('button',{name:'Levantar câmera'}).click();
@@ -173,10 +200,13 @@ try {
       await screenshot(page, 'technology-free-camera-3d');
     }
     await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
+    await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
+    technologyMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
   check('Technology mission completes', await page.evaluate(() => state.medals.code === true));
+  check('Four technology steps have different articulated arm silhouettes',new Set(technologyMotionSignatures).size===4);
   await page.locator('#closeDialog').click();
   await page.evaluate(() => { __THIA_TEST.startRace(); for (const p of __THIA_TEST.racePoints) { player.x = p.x; player.z = p.z; __THIA_TEST.gameStep(.05); } });
   check('All six race checkpoints finish', await page.evaluate(() => state.medals.race === true && __THIA_TEST.getRace() === null));
