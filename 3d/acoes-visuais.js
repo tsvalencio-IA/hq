@@ -254,6 +254,31 @@ function stageProps(s,t){
   E.draw('cyl',M.mul(M.tr((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2),
      M.mul(M.ry(heading),M.mul(M.rx(angle),M.s(.024,len/2,.024)))),col);
  };
+ const hands=mascotStudio.snapshot[state.avatar]?.handPositions||[];
+ const hand0=hands[0],hand1=hands[1];
+ if(hand0&&hand1&&s.elapsed>duration*.17){
+   // Leads, brushes and devices are physically tethered to the articulated palms.
+   if(s.mode==='garage'&&s.step===0){
+     cord([28.72,1.53,-18.62],hand0,'#e95555');
+     cord([28.96,1.53,-18.62],hand1,'#233347');
+     cord(hand0,[29.20,1.91,-19.59],'#e95555');
+     cord(hand1,[29.83,1.91,-19.59],'#233347');
+     bulb(...hand0,.045,'#ed7770');bulb(...hand1,.045,'#263a53');
+   }else if(s.mode==='garage'&&s.step===2){
+     cord([28.88,1.69,-18.76],hand0,'#e95555');
+     cord([29.08,1.67,-18.76],hand1,'#233347');
+   }else if(s.mode==='garage'&&s.step===3){
+     // Brush follows the hand, not an independent animated position.
+     cord(hand1,[29.25,1.77,-19.55],'#d5a366');
+     bulb(...hand1,.07,'#b6c9d1');
+   }else if(s.mode==='code'&&s.step===2){
+     // User rotates the device with the palm attached.
+     const phone=M.mul(M.tr(hand1[0],hand1[1]+.06,hand1[2]-.045),M.mul(M.rz(-v*Math.PI/2),M.s(.14,.24,.035)));
+     E.draw('box',phone,'#294059');
+   }else if(s.mode==='code'&&s.step===1){
+     for(const h of hands)if(h)bulb(h[0],h[1]-.025,h[2]-.03,.035,'#e5d9b6');
+   }
+ }
  if(s.mode==='garage'){
   if(s.step===0){
    // 1. Multimeter reaches both real terminal objects as the readout climbs.
