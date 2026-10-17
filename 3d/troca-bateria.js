@@ -20,6 +20,39 @@ const total=steps.reduce((a,s)=>a+s[2],0);
 let work=null,backup=null;
 const ease=n=>{n=Math.max(0,Math.min(1,n));return n*n*(3-2*n)};
 const lerp=(a,b,p)=>a+(b-a)*p;
+const inBay=[29.40,1.54,-19.43],carry=[29.20,1.53,-19.16];
+const oldShelf=[28.07,1.12,-18.64],newShelf=[29.23,1.12,-18.64];
+function between(a,b,t){return a.map((v,i)=>lerp(v,b[i],ease(t)))}
+function batteryMotion(i,p){
+ let oldAt=inBay,newAt=newShelf;
+ if(i===5)oldAt=p<.35?between(inBay,carry,p/.35):between(carry,oldShelf,(p-.35)/.65);
+ else if(i>5)oldAt=oldShelf;
+ if(i===6)newAt=p<.45?between(newShelf,carry,p/.45):between(carry,inBay,(p-.45)/.55);
+ else if(i>6)newAt=inBay;
+ return {oldAt,newAt};
+}
+function actualTask(i,p){
+ const {oldAt,newAt}=batteryMotion(i,p);
+ const part=i===5?oldAt:i===6?newAt:null;
+ const actor=part?{x:part[0],z:part[2]+.44}:{x:29.40,z:-18.91};
+ let left,right;
+ if(part){
+   left=[part[0]+.37,part[1]+.15,part[2]+.19];
+   right=[part[0]-.37,part[1]+.15,part[2]+.19];
+ } else {
+   switch(i){
+     case 1:left=[29.69,1.82+.18*ease(p),-19.25];right=[29.16,1.82+.18*ease(p),-19.25];break;
+     case 2:left=[29.70,1.74,-19.31];right=[29.15,1.61,-19.18];break;
+     case 3:left=[29.19,1.76,-19.30];right=[29.67,1.62,-19.20];break;
+     case 4:case 7:left=[29.54,1.79,-19.29];right=[29.21,1.80,-19.25];break;
+     case 8:left=[29.18,1.75,-19.31];right=[29.62,1.61,-19.18];break;
+     case 9:left=[29.64,1.75,-19.31];right=[29.15,1.61,-19.17];break;
+     default:left=[29.60,1.83,-19.28];right=[29.16,1.73,-19.21];
+   }
+ }
+ return {actor,hands:[left,right],oldAt,newAt};
+}
+
 const panel=document.createElement('aside');
 panel.id='batteryWorkPanel';
 panel.setAttribute('aria-label','Etapas visíveis da simulação de troca de bateria');
@@ -85,7 +118,7 @@ gameStep=function(dt){
  if(work.elapsed<total){
   work.elapsed=Math.min(total,work.elapsed+dt);
   const phase=findPhase(work.elapsed);
-  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.20,u);player.z=lerp(-15.4,-18.60,u);player.heading=Math.atan2(2.9,-2.15);}else{player.x=29.20;player.z=-18.60;player.heading=Math.PI;}
+  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.40,u);player.z=lerp(-15.4,-18.91,u);player.heading=Math.atan2(2.9,-2.15);}else{const task=actualTask(phase.i,phase.p);player.x=task.actor.x;player.z=task.actor.z;player.heading=Math.PI;}
   if(phase.i!==work.lastStep){work.lastStep=phase.i;refreshPanel()}
   document.getElementById('batteryProgress').style.width=Math.round(100*work.elapsed/total)+'%';
  }
@@ -105,7 +138,7 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(work&&id===state.avatar){
   const phase=findPhase(work.elapsed),walking=phase.i===0;
   const key=batteryPoses[Math.min(phase.i,10)];
-  const pose=walking?null:{kind:key,progress:phase.p};
+  const pose=walking?null:{kind:key,progress:phase.p,hands:actualTask(phase.i,phase.p).hands};
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
      walking?t:work.elapsed*2,0,0,0,pose);
  }
@@ -133,35 +166,30 @@ function drawWorkshop(){
  const hood=M.mul(hinge,M.mul(M.t(0,0,1.07),M.s(1.13,.05,1.11)));
  E.draw('box',hood,'#386b9b');
  // Bateria de origem do compartimento para as mãos e para a bancada
- const inBay=[29.40,1.52,-19.46],held=[28.80,1.30,-18.42],oldShelf=[28.25,.78,-18.06];
- const newShelf=[28.25,.78,-18.72];
- let oldAt=inBay,newAt=newShelf;
- // Removing and placing batteries are now distinct continuous motions.
- if(i===5)oldAt=p<.5?position(p*2,inBay,held):position((p-.5)*2,held,oldShelf);
- else if(i>5)oldAt=oldShelf;
- if(i===6)newAt=p<.5?position(p*2,newShelf,held):position((p-.5)*2,held,inBay);
- else if(i>6)newAt=inBay;
+ const {oldAt,newAt}=batteryMotion(i,p);
  battery(...oldAt,'#3b4149');
  battery(...newAt,'#1d65a2');
- drawBox(28.25,.43,-18.36,1.30,.09,1.35,'#a47750');
- for(const dx of[-.45,.45])for(const dz of[-.48,.48])drawBox(28.25+dx,.22,-18.36+dz,.07,.24,.07,'#4c5659');
+ drawBox(28.65,.71,-18.64,1.44,.09,.57,'#a47750');
+ for(const dx of[-1.20,1.20])for(const dz of[-.40,.40])
+   drawBox(28.65+dx,.37,-18.64+dz,.07,.35,.07,'#4c5659');
  // bornes e terminais têm estado visual de desconectado durante o procedimento
  // Positive and negative terminals disconnect and reconnect at their own step.
- if(i<3||i>=8)drawOrb(29.18,1.92,-19.63,.10,'#d64a45');
- else drawOrb(29.01,1.75,-19.23,.10,'#d64a45');
- if(i<2||i>=9)drawOrb(29.70,1.92,-19.63,.10,'#313d4e');
- else drawOrb(29.92,1.77,-19.19,.10,'#313d4e');
+ const redFree=i===3?p>=.5:i>=4&&i<8||i===8&&p<.5;
+ const blackFree=i===2?p>=.5:i>=3&&i<9||i===9&&p<.5;
+ drawOrb(redFree?29.02:29.18,redFree?1.75:1.79,redFree?-19.18:-19.31,.075,'#d64a45');
+ drawOrb(blackFree?29.86:29.70,blackFree?1.75:1.79,blackFree?-19.18:-19.31,.075,'#313d4e');
  // ferramenta acompanhando o serviço
  // Bracket lifts off at step 5 and is secured again at step 8.
  if(i<=4||i>=7){
   const lift=i===4?ease(p)*.39:i===7?(1-ease(p))*.39:0;
   drawBox(29.45,1.94+lift,-19.45,.62,.045,.075,'#b7bfc4');
  }
- // The mechanic positions the wrench over the actual terminal or bracket.
+ // The wrench follows the articulated wrist instead of floating in space.
  if([2,3,4,7,8,9].includes(i)){
-  const point=i===2||i===9?[29.70,-19.63]:i===3||i===8?[29.18,-19.63]:[29.45,-19.45];
-  const y=1.98+.055*Math.sin(work.elapsed*9);
-  E.draw('cyl',M.mul(M.tr(point[0],y,point[1]),M.mul(M.rz(.34*Math.sin(work.elapsed*7)),M.s(.036,.22,.036))),'#b1bbc7');
+  const wrist=mascotStudio.snapshot[state.avatar]?.hands?.[0]||actualTask(i,p).hands[0];
+  E.draw('cyl',M.mul(M.tr(wrist[0],wrist[1]-.04,wrist[2]-.06),
+    M.mul(M.rz(.30*Math.sin(work.elapsed*7)),M.s(.027,.12,.027))),'#b1bbc7');
+  drawOrb(wrist[0],wrist[1]-.14,wrist[2]-.07,.044,'#c8d3db');
  }
  // Each phase highlights only its active physical target.
  if(i===0){drawBox(28.45,.85,-17.75,.45,.10,.32,'#ffd36f')}
