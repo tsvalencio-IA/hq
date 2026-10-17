@@ -347,7 +347,7 @@ function missionObjects(s,t){
 const normalDraw=drawWorld;
 drawWorld=function(t){
  normalDraw(t);
- if(scene){missionObjects(scene,t);stageProps(scene,t)}
+ if(scene){missionObjects(scene,t);stageProps(scene,scene.elapsed*2)}
  if(!scene&&!ball&&!batteryOn()&&started&&!dialogOpen){
   const heading=player.heading;
   const x=player.x+Math.cos(heading)*.50+Math.sin(heading)*.07;
