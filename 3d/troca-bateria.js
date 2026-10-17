@@ -85,7 +85,7 @@ gameStep=function(dt){
  if(work.elapsed<total){
   work.elapsed=Math.min(total,work.elapsed+dt);
   const phase=findPhase(work.elapsed);
-  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.1,u);player.z=lerp(-15.4,-17.55,u);player.heading=Math.atan2(2.9,-2.15);}else{player.x=29.1;player.z=-17.55;player.heading=Math.PI;}
+  if(phase.i===0){let u=ease(phase.p);player.x=lerp(26.2,29.20,u);player.z=lerp(-15.4,-18.60,u);player.heading=Math.atan2(2.9,-2.15);}else{player.x=29.20;player.z=-18.60;player.heading=Math.PI;}
   if(phase.i!==work.lastStep){work.lastStep=phase.i;refreshPanel()}
   document.getElementById('batteryProgress').style.width=Math.round(100*work.elapsed/total)+'%';
  }
@@ -133,8 +133,8 @@ function drawWorkshop(){
  const hood=M.mul(hinge,M.mul(M.t(0,0,1.07),M.s(1.13,.05,1.11)));
  E.draw('box',hood,'#386b9b');
  // Bateria de origem do compartimento para as mãos e para a bancada
- const inBay=[29.40,1.52,-19.46],held=[28.72,1.30,-18.33],oldShelf=[26.65,.78,-17.63];
- const newShelf=[26.65,.78,-18.72];
+ const inBay=[29.40,1.52,-19.46],held=[28.80,1.30,-18.42],oldShelf=[28.25,.78,-18.06];
+ const newShelf=[28.25,.78,-18.72];
  let oldAt=inBay,newAt=newShelf;
  // Removing and placing batteries are now distinct continuous motions.
  if(i===5)oldAt=p<.5?position(p*2,inBay,held):position((p-.5)*2,held,oldShelf);
@@ -143,8 +143,8 @@ function drawWorkshop(){
  else if(i>6)newAt=inBay;
  battery(...oldAt,'#3b4149');
  battery(...newAt,'#1d65a2');
- drawBox(26.55,.43,-18.2,1.30,.09,1.35,'#a47750');
- for(const dx of[-.45,.45])for(const dz of[-.48,.48])drawBox(26.55+dx,.22,-18.2+dz,.07,.24,.07,'#4c5659');
+ drawBox(28.25,.43,-18.36,1.30,.09,1.35,'#a47750');
+ for(const dx of[-.45,.45])for(const dz of[-.48,.48])drawBox(28.25+dx,.22,-18.36+dz,.07,.24,.07,'#4c5659');
  // bornes e terminais têm estado visual de desconectado durante o procedimento
  // Positive and negative terminals disconnect and reconnect at their own step.
  if(i<3||i>=8)drawOrb(29.18,1.92,-19.63,.10,'#d64a45');
