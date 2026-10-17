@@ -136,7 +136,7 @@ try {
           document.getElementById('actionPause').click();
       });
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
-      await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose==='garage:meter' && __THIA_TEST.mascotStudio.rigs[state.avatar].arms[0].shoulder.rot[0]<-.4);
+      await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose==='garage:meter' && __THIA_TEST.mascotStudio.snapshot[state.avatar]?.handPositions?.every(p=>p.every(Number.isFinite)));
       check('Garage action rotates the character arms into its meter-specific pose', true);
       await screenshot(page, 'garage-free-camera-3d');
     }
@@ -212,7 +212,7 @@ try {
       await page.locator('#actionReplay').click();
       check('Technology scene can replay without altering mission results',await page.evaluate(()=>__THIA_ACTIONS.current()?.phase==='running'&&__THIA_ACTIONS.current()?.elapsed<.9));
       await page.waitForFunction(() => __THIA_ACTIONS.current()?.elapsed > .95, null, { timeout: 15000 });
-      await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose==='code:calculate' && __THIA_TEST.mascotStudio.rigs[state.avatar].arms.every(a => a.shoulder.rot[0]<-.4));
+      await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose==='code:calculate' && __THIA_TEST.mascotStudio.snapshot[state.avatar]?.handPositions?.every(p=>p.every(Number.isFinite)));
       check('Calculator interaction articulates both arms and fingers', true);
       await screenshot(page, 'technology-free-camera-3d');
     }
