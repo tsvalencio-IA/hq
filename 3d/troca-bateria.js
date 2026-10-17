@@ -79,7 +79,7 @@ function begin(){
  backup={player:{x:player.x,z:player.z,heading:player.heading,speed:player.speed,jump:player.jump},partner:{x:partner.x,z:partner.z,heading:partner.heading},camera:{yaw:camera.yaw,pitch:camera.pitch,dist:camera.dist}};
  player.x=26.2;player.z=-15.4;player.heading=Math.atan2(2.9,-2.15);player.speed=0;player.jump=0;
  partner.x=26;partner.z=-17.5;partner.heading=Math.PI;
- camera.yaw=.46;camera.pitch=.30;camera.dist=9.7;
+ camera.yaw=1.48;camera.pitch=.35;camera.dist=7.2;
  work={elapsed:0,lastStep:-1};
  document.body.classList.add('battery-mode');
  refreshPanel();
