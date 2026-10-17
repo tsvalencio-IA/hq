@@ -188,7 +188,7 @@ function drawWorkshop(){
  if([2,3,4,7,8,9].includes(i)){
   const wrist=mascotStudio.snapshot[state.avatar]?.hands?.[0]||actualTask(i,p).hands[0];
   E.draw('cyl',M.mul(M.tr(wrist[0],wrist[1]-.04,wrist[2]-.06),
-    M.mul(M.rz(.30*Math.sin(work.elapsed*7)),M.s(.027,.12,.027))),'#b1bbc7');
+    M.mul(M.rz(.30*Math.sin(work.elapsed*7)*([7,8,9].includes(i)?-1:1)),M.s(.027,.12,.027))),'#b1bbc7');
   drawOrb(wrist[0],wrist[1]-.14,wrist[2]-.07,.044,'#c8d3db');
  }
  // Each phase highlights only its active physical target.
@@ -206,5 +206,5 @@ function drawWorkshop(){
 }
 const originalDraw=drawWorld;
 drawWorld=function(t){originalDraw(t);drawWorkshop()};
-window.__THIA_BATTERY_TEST={begin,leave,phase:()=>work?findPhase(work.elapsed):null,contact:()=>work?actualTask(findPhase(work.elapsed).i,findPhase(work.elapsed).p):null,pose:()=>work?batteryPoses[Math.min(findPhase(work.elapsed).i,10)]:null,poses:batteryPoses.slice(),steps,total,isActive:()=>!!work,advance:dt=>{if(work){work.elapsed=Math.min(total,work.elapsed+dt);refreshPanel()}},panel};
+window.__THIA_BATTERY_TEST={begin,leave,phase:()=>work?findPhase(work.elapsed):null,contact:()=>work?actualTask(findPhase(work.elapsed).i,findPhase(work.elapsed).p):null,plan:(i,p)=>actualTask(i,p),pose:()=>work?batteryPoses[Math.min(findPhase(work.elapsed).i,10)]:null,poses:batteryPoses.slice(),steps,total,isActive:()=>!!work,advance:dt=>{if(work){work.elapsed=Math.min(total,work.elapsed+dt);refreshPanel()}},panel};
 })();
