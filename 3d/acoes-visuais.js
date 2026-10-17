@@ -14,7 +14,7 @@ const actionPrograms={
  code:['code:review','code:calculate','code:responsive','code:tests']
 };
 const centers={garage:{x:29.05,z:-18.55,face:Math.PI,focus:[29.55,1.65,-19.4]},
- code:{x:-45.35,z:-19.42,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
+ code:{x:-45.35,z:-19.15,face:Math.PI,focus:[-45.35,1.7,-19.72]}};
 const duration=4.5;
 let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0;
 const label=document.createElement('div');
@@ -172,6 +172,26 @@ renderSkyAndView=function(){
  camera.vp=M.mul(M.perspective(PI/3.0,w/Math.max(h,1),.1,240),M.lookAt(eye,target));
  E.begin(camera.vp,eye);
 };
+// Physical wrist targets for the exact part or input being operated.
+// Index 0 = rig left, index 1 = rig right (not generic arm waving).
+function contactTargets(s){
+ const p=clamp01((s.elapsed/duration-.17)/.83),v=smooth(p),
+       pulse=Math.sin(s.elapsed*11),work=s.mode==='garage';
+ if(work){
+  switch(s.step){
+   case 0:return [[29.43,1.57,-19.14],[28.85,1.48,-19.03]];
+   case 1:return [[29.44,1.56,-19.12],[28.91,1.52,-19.00]];
+   case 2:return [[29.48,1.56,-19.14],[28.88,1.55,-19.10]];
+   case 3:return [[29.43,1.55,-19.13],[29.00+.065*pulse*v,1.55,-19.12]];
+  }
+ }
+ switch(s.step){
+  case 0:return [[-45.13,1.55,-19.74],[-45.55,1.43,-19.69]];
+  case 1:return [[-45.14,1.31+.020*pulse,-19.66],[-45.54,1.31-.018*pulse,-19.65]];
+  case 2:return [[-44.99,1.53,-19.65],[-45.26,1.47+.05*pulse,-19.66]];
+  default:return [[-45.19,1.31,-19.66],[-45.53,1.52,-19.78]];
+ }
+}
 const normalPerson=person;
 person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(batteryOn())return normalPerson(id,x,z,heading,move,run,jump,t,throwing);
@@ -180,7 +200,9 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
   const walking=scene.elapsed<duration*.17;
   const acting=scene.elapsed>duration*.17;
   const phase=clamp01((scene.elapsed/duration-.17)/.83);
-  const pose=acting?{kind:scene.poseKey,progress:phase}:null;
+  const hands=acting?contactTargets(scene):null;
+   scene.targets=hands;
+   const pose=acting?{kind:scene.poseKey,progress:phase,hands}:null;
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
     acting?scene.elapsed*2:t,0,0,0,pose);
  }
@@ -207,113 +229,119 @@ function toyMesh(kind,x,y,z,k=1){
   for(const side of [-1,1])E.draw('sphere',M.mul(m,M.mul(M.t(side*.20*k,0,0),M.s(.088*k,.09*k,.09*k))),'#f9e4c4');
  }
 }
-function missionObjects(s,t){
- // Only the shared physical workstation remains identical. The actual objects
- // and joints for each step are drawn in stageProps below.
- if(s.mode==='garage'){
-  box(29.46,1.22,-19.40,.92,.10,.67,'#324655');
-  box(29.46,1.33,-19.40,.79,.035,.57,'#566873');
-  box(28.85,.92,-18.67,.68,.04,.32,'#987b58');
- }else{
-  box(-45.35,.81,-20.06,1.12,.06,.62,'#98734f');
-  for(let side of [-1,1])rod(-45.35+side*.88,.40,-20.06,.07,.39,.07,'#46555e');
-  box(-45.35,1.58,-20.32,.78,.57,.075,'#253f52');
-  box(-45.35,1.58,-20.22,.69,.48,.016,'#14394b');
-  box(-45.34,.97,-19.65,.56,.034,.24,'#263b50');
- }
- const a=s.area;
- const point=M.project(camera.vp,[a.focus[0],2.55,a.focus[2]],E.width,E.height);
- if(point){
-  label.style.display='block';
-  label.style.left=Math.max(10,Math.min(E.width-155,point[0]-80))+'px';
-  label.style.top=Math.max(75,point[1]-25)+'px';
- }
-}
+// Stage props are drawn at the same world positions used by wrist IK.
 function stageProps(s,t){
- const u=clamp01((s.elapsed/duration-.20)/.80),v=smooth(u),glow=s.correct?'#61e9b2':'#f5b46f';
- const bar=(x,y,z,dx,dy,dz,col)=>E.draw('box',M.tr(x,y,z,dx,dy,dz),col);
- const rod=(x,y,z,h,col)=>E.draw('cyl',M.tr(x,y,z,.035,h,.035),col);
- const bulb=(x,y,z,r,col)=>E.draw('sphere',M.tr(x,y,z,r,r,r),col);
- const cord=(a,b,col)=>{
-  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],len=Math.hypot(dx,dy,dz)||1;
-  const angle=Math.atan2(Math.hypot(dx,dz),dy),heading=Math.atan2(dx,dz);
-  E.draw('cyl',M.mul(M.tr((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2),
-     M.mul(M.ry(heading),M.mul(M.rx(angle),M.s(.024,len/2,.024)))),col);
+ const p=clamp01((s.elapsed/duration-.17)/.83),done=smooth(p),
+       success=s.correct?'#65eab6':'#f2b56b';
+ const hands=mascotStudio.snapshot[state.avatar]?.hands||s.targets||contactTargets(s);
+ const [left,right]=hands;
+ const cube=(x,y,z,sx,sy,sz,color)=>E.draw('box',M.tr(x,y,z,sx,sy,sz),color);
+ const orb=(x,y,z,r,color)=>E.draw('sphere',M.tr(x,y,z,r,r,r),color);
+ const join=(a,b,r,color)=>{
+   const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
+   const d=Math.hypot(dx,dy,dz)||.001;
+   const yaw=Math.atan2(dx,dz),pitch=Math.atan2(Math.hypot(dx,dz),dy);
+   E.draw('cyl',M.mul(M.tr((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2),
+     M.mul(M.ry(yaw),M.mul(M.rx(pitch),M.s(r,d/2,r)))),color);
  };
  if(s.mode==='garage'){
-  if(s.step===0){
-   // 1. Multimeter reaches both real terminal objects as the readout climbs.
-   bar(29.50,1.68,-19.60,.40,.24,.29,'#39434e');
-   bulb(29.20,1.91,-19.59,.075,'#e65a56');
-   bulb(29.83,1.91,-19.59,.075,'#25394d');
-   bar(28.84,1.48,-18.65,.27,.22,.13,'#1d5280');
-   bar(28.84,1.63,-18.50,.23,.07,.025,v>.68?glow:'#8cb8d1');
-   cord([28.72,1.53,-18.62],[29.20,1.91+(1-v)*.22,-19.59],'#ef6964');
-   cord([28.96,1.53,-18.62],[29.83,1.91+(1-v)*.18,-19.59],'#25364b');
-   for(let k=0;k<4;k++)bar(28.70+k*.10,1.73,-18.49,.035,.02,.012,k<Math.round(v*4)?glow:'#34475a');
-  }else if(s.step===1){
-   // 2. Alternator/battery are distinct comparison instruments.
-   for(let k=0;k<2;k++){
-    const x=29.03+k*.74;
-    bar(x,1.58,-19.20,.30,.28,.19,k?'#386582':'#23455f');
-    bar(x,1.67,-18.998,.25,.11,.015,k===0?'#8ddffa':v>.55?glow:'#ffd581');
-    for(let j=0;j<4;j++)bar(x-.20+j*.13,1.72,-18.979,.035,.024,.012,j<Math.round((k?v:.8)*4)?'#54e6bb':'#596671');
+   // Contactable engine tray with stable poles close enough for the rig.
+   cube(29.30,1.31,-19.09,.67,.08,.35,'#536574');
+   cube(29.40,1.42,-19.18,.26,.12,.18,'#39434f');
+   orb(29.46,1.56,-19.15,.063,'#ee635d');
+   orb(29.16,1.56,-19.15,.063,'#293649');
+   if(s.step===0){
+     // Multimeter stays attached to right palm; left wrist presses a red probe.
+     cube(right[0],right[1],right[2],.20,.14,.07,'#255b86');
+     cube(right[0],right[1]+.025,right[2]+.075,.16,.035,.014,done>.56?success:'#a5cee0');
+     join(right,left,.014,'#e86356');
+     join(left,[left[0],left[1]-.065,left[2]-.07],.018,'#d63d41');
+     for(let i=0;i<4;i++)cube(right[0]-.07+i*.048,right[1]+.04,right[2]+.086,.019,.009,.006,i/4<done?success:'#40546c');
+   }else if(s.step===1){
+     // Mechanic operates a selector on the first instrument and
+     // points at two distinct measurement screens; both readings respond.
+     for(let k=0;k<2;k++){
+       const x=29.40-k*.50;
+       cube(x,1.53,-19.10,.18,.13,.10,k?'#345875':'#255270');
+       cube(x,1.57,-18.982,.145,.06,.008,k===0?'#9de4ee':done>.5?success:'#e7c279');
+       for(let j=0;j<3;j++)cube(x-.06+j*.05,1.58,-18.968,.017,.009,.005,j<Math.floor(done*4)?'#6fefbd':'#35556e');
+     }
+     E.draw('cyl',M.mul(M.t(left[0],left[1]-.02,left[2]),M.s(.078,.024,.078)),'#f0c472');
+     orb(right[0],right[1],right[2],.045,'#8fd1e9');
+   }else if(s.step===2){
+     // Two probes genuinely terminate at positive and chassis-ground points.
+     cube(28.91,1.38,-19.00,.16,.12,.08,'#285577');
+     join([28.90,1.46,-19.00],left,.014,'#ec6d67');
+     join([28.99,1.46,-19.00],right,.014,'#273645');
+     join(left,[left[0],left[1]-.06,left[2]-.06],.019,'#ef5853');
+     join(right,[right[0],right[1]-.06,right[2]-.07],.019,'#273342');
+     orb(28.99,1.50,-19.12,.068,'#b4c5cb');
+     for(let i=0;i<5;i++)if(i/5<done)orb(29.05+i*.10,1.78,-19.08,.025,success);
+   }else{
+     // Wire-brush handle is gripped by the actual right palm. Rust clears
+     // under its moving bristles while the left hand steadies the terminal.
+     const tip=[right[0]+.09,right[1]-.025,right[2]-.02];
+     join(right,tip,.030,'#b8884a');
+     cube(tip[0],tip[1],tip[2],.085,.04,.045,'#bfc9cb');
+     for(let i=0;i<5;i++)join([tip[0]-.03+i*.016,tip[1]-.028,tip[2]],
+       [tip[0]-.03+i*.016,tip[1]-.06,tip[2]],.007,'#e4cfa4');
+     cube(29.21,1.55,-19.15,.105,.035,.10,done>.65?'#75edb0':'#af753f');
+     for(let i=0;i<8;i++)if(done<i/8)orb(29.14+(i%4)*.033,1.63+Math.floor(i/4)*.05,-19.15,.016,'#9c6634');
    }
-   E.draw('cyl',M.mul(M.tr(29.42,1.55,-18.70),M.mul(M.ry(t*1.4*v),M.s(.17,.048,.17))),'#f1c26b');
-   for(let j=0;j<3;j++)bulb(29.12+j*.29,1.94+Math.sin(t*2+j)*.04,-19.26,.04,glow);
-  }else if(s.step===2){
-   // 3. Ground cable and return circuit; sequential conduction pulses.
-   bar(29.45,1.52,-19.55,.48,.22,.23,'#505864');
-   bar(28.99,1.59,-18.77,.28,.20,.15,'#28577b');
-   cord([28.88,1.69,-18.76],[29.14,1.77,-19.62],'#e96364');
-   cord([29.08,1.67,-18.76],[29.84,1.79,-19.37],'#253444');
-   bulb(29.14,1.77,-19.62,.074,'#d35d49');
-   bulb(29.84,1.79,-19.37,.072,'#d0dfd7');
-   for(let k=0;k<5;k++)if(v>k/5)bulb(29.20+k*.14,1.96,-19.4,.04,glow);
-  }else{
-   // 4. Oxidation visibly disappears under a moving wire brush.
-   bar(29.25,1.62,-19.55,.28,.20,.22,'#4e5964');
-   bar(29.25,1.77,-19.55,.13,.052,.12,v>.7?'#67dfad':'#b36e35');
-   const shift=Math.sin(t*14)*v*.20;
-   cord([28.82,1.93,-19.10],[29.25+shift,1.83,-19.55],'#d5a366');
-   bar(29.25+shift,1.83,-19.55,.11,.07,.08,'#b9c6c5');
-   for(let k=0;k<9;k++)if(v<k/9)bulb(29.08+(k%3)*.13,1.89+Math.floor(k/3)*.075,-19.50,.026,'#aa7843');
-   if(v>.88)for(let k=0;k<3;k++)bulb(29.16+k*.10,1.93,-19.55,.032,'#77f2bb');
-  }
- }else if(s.step===0){
-  // 5. Review individual file cards then confirm an intact backup.
-  for(let k=0;k<4;k++){
-   const x=-45.75+(k%2)*.39,y=1.72-Math.floor(k/2)*.22;
-   bar(x,y,-20.18,.16,.066,.022,k<Math.floor(v*5)?glow:'#789fc3');
-   bar(x-.055,y,-20.145,.06,.018,.011,'#e5f0f2');
-  }
-  for(let k=0;k<3;k++)bar(-45.79+k*.33,.98+Math.min(k,v*3)*.1,-19.42,.20,.016,.16,'#e4eee9');
-  bulb(-44.77,1.12,-19.51,.12,v>.83?'#7ef0bd':'#e0ae5d');
- }else if(s.step===1){
-  // 6. A calculator: typed keys and numeric bars change independently.
-  for(let k=0;k<12;k++){
-    const x=-45.78+(k%4)*.27,y=1.79-Math.floor(k/4)*.15;
-    bar(x,y,-20.185,.083,.022,.013,(k+Math.floor(t*8))%6===0?'#f4d680':'#91d9e6');
-  }
-  for(let k=0;k<6;k++)bar(-45.80+(k%3)*.24,.97,-19.53+Math.floor(k/3)*.14,.08,.017,.06,k===Math.floor(t*8)%6?'#f4ca71':'#a6dce1');
-  for(let k=0;k<3;k++)bar(-44.72+k*.15,1.08+k*v*.13,-19.75,.060,.05+k*v*.09,.06,'#f4c778');
- }else if(s.step===2){
-  // 7. A tangible telephone tilts portrait-to-landscape, rearranging blocks.
-  const angle=-v*Math.PI/2,mid=M.tr(-44.57,1.48,-19.75);
-  E.draw('box',M.mul(mid,M.mul(M.rz(angle),M.s(.16,.28,.04))),'#263b54');
-  E.draw('box',M.mul(M.tr(-44.57,1.48,-19.70),M.mul(M.rz(angle),M.s(.135,.235,.010))),glow);
-  for(let k=0;k<4;k++){
-   const x=-45.73+(v>.5?k*.25:(k%2)*.40),y=1.72-(v>.5?0:Math.floor(k/2)*.19);
-   bar(x,y,-20.190,.095,.045,.013,'#afdcef');
-  }
  }else{
-  // 8. Tests execute one at a time and remain green on success.
-  for(let k=0;k<5;k++){
-   bar(-45.75,1.79-k*.10,-20.19,.27,.027,.014,'#a1ddea');
-   bulb(-45.31,1.79-k*.10,-20.165,.035,v>(k+1)/5?glow:'#efb96c');
-  }
-  rod(-44.61,1.08+v*.60,-19.72,.10,v>.93?glow:'#ddbb7e');
-  if(v>.90)bulb(-44.61,1.76,-19.72,.13,glow);
+   // Desktop is at reachable hand height, not waist-high below the wrists.
+   cube(-45.35,1.20,-19.77,.68,.045,.39,'#8e775d');
+   cube(-45.35,1.62,-19.98,.72,.43,.055,'#263e51');
+   cube(-45.35,1.62,-19.913,.65,.37,.008,'#163b4e');
+   if(s.step===0){
+     // Index finger selects files on monitor; right hand takes a document.
+     for(let i=0;i<4;i++){
+       const x=-45.57+(i%2)*.28,y=1.71-Math.floor(i/2)*.16;
+       cube(x,y,-19.901,.091,.047,.006,i<Math.round(done*4)?success:'#80a9cc');
+       cube(x-.03,y,-19.890,.032,.010,.003,'#e4f4f1');
+     }
+     cube(right[0],right[1]-.035,right[2],.14,.012,.11,'#f3e8d4');
+     cube(right[0],right[1]-.020,right[2]+.005,.12,.006,.10,'#d5e3e2');
+     orb(left[0],left[1],left[2],.024,'#bcecf5');
+   }else if(s.step===1){
+     // The keys actually being touched follow both fingertips.
+     cube(-45.35,1.29,-19.64,.54,.032,.20,'#243c50');
+     for(let i=0;i<6;i++)for(let j=0;j<3;j++){
+       const x=-45.58+i*.09,z=-19.70+j*.06;
+       cube(x,1.315,z,.035,.008,.023,Math.sin(t*9+i+j)> .68?'#fae59a':'#a9d7db');
+     }
+     orb(left[0],left[1]-.018,left[2],.022,'#f5d98b');
+     orb(right[0],right[1]-.018,right[2],.022,'#f5d98b');
+     for(let i=0;i<4;i++)cube(-45.58+i*.17,1.72,-19.90,.065,.014,.006,i/4<done?success:'#82c2e2');
+   }else if(s.step===2){
+     // Phone is held in the left palm and rotates around that contact.
+     const angle=-done*Math.PI*.48,pos=M.t(left[0],left[1],left[2]);
+     E.draw('box',M.mul(pos,M.mul(M.rz(angle),M.s(.12,.22,.032))),'#25364e');
+     E.draw('box',M.mul(M.t(left[0],left[1],left[2]+.039),
+       M.mul(M.rz(angle),M.s(.102,.19,.008))),success);
+     orb(right[0],right[1],right[2],.022,'#fff1b4');
+     for(let i=0;i<4;i++)cube(-45.58+(done>.55?i*.14:(i%2)*.29),
+       1.67-(done>.55?0:Math.floor(i/2)*.115),-19.900,.065,.033,.006,'#b4deee');
+   }else{
+     // Right finger initiates the test on the monitor, left finger taps Run.
+     cube(-45.22,1.30,-19.64,.085,.017,.057,done>.28?success:'#e0b774');
+     for(let i=0;i<5;i++){
+       cube(-45.53,1.72-i*.07,-19.899,.17,.013,.006,'#9ad8e8');
+       orb(-45.26,1.72-i*.07,-19.88,.020,done>(i+1)/5?success:'#f1b669');
+     }
+     orb(right[0],right[1],right[2],.023,'#f5d78e');
+   }
+ }
+}
+function missionObjects(s,t){
+ // No fixed imitation hands/tools; dynamic props are drawn by stageProps
+ // from the same measured wrist positions as the articulated mascot.
+ const at=s.area.focus;
+ const point=M.project(camera.vp,[at[0],2.45,at[2]],E.width,E.height);
+ if(point){
+   label.style.display='block';
+   label.style.left=Math.max(10,Math.min(E.width-155,point[0]-80))+'px';
+   label.style.top=Math.max(75,point[1]-25)+'px';
  }
 }
 const normalDraw=drawWorld;
