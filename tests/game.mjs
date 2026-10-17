@@ -141,6 +141,7 @@ try {
     });
     console.log('GARAGE_PHYSICAL_CONTACT',JSON.stringify(garageContact));
     check('Garage step '+(step+1)+' reaches physical target with both palms',garageContact.max<.26);
+    if(step===3)await screenshot(page,'garage-brush-on-terminal');
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
@@ -189,6 +190,7 @@ try {
     });
     console.log('BATTERY_PHYSICAL_CONTACT',JSON.stringify(batteryContact));
     check('Battery phase '+(i+1)+' keeps actual hands on the working part',batteryContact.max<.28);
+    if(i===5||i===6)await screenshot(page,'battery-two-hands-stage-'+i);
   }
   check('Nine successive battery procedures have distinct joint poses',new Set(batteryFrames).size===9);
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
@@ -225,6 +227,7 @@ try {
     });
     console.log('TECH_PHYSICAL_CONTACT',JSON.stringify(technologyContact));
     check('Technology stage '+(step+1)+' reaches its physical screen or object',technologyContact.max<.26);
+    if(step===2)await screenshot(page,'technology-phone-in-hand');
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
