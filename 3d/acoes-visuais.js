@@ -194,7 +194,10 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
        [[-45.53,1.07,-19.66],[-45.19,1.20,-19.69]]
      ]
    };
-   const pose=acting?{kind:scene.poseKey,progress:phase,targets:targets[scene.mode][scene.step]}:null;
+   // rig.arms[0] is the character's left arm (world +X at heading PI).
+   // Targets are authored as [right-side equipment, left-side equipment].
+   const palmTargets=targets[scene.mode][scene.step];
+   const pose=acting?{kind:scene.poseKey,progress:phase,targets:[palmTargets[1],palmTargets[0]]}:null;
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
     acting?scene.elapsed*2:t,0,0,0,pose);
  }
