@@ -178,11 +178,14 @@ try {
       t.advance(Math.max(0,target-current));
       return t.poses[i];
     },i);
-    await page.waitForFunction(key=>__THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===key,expected);
+    await page.waitForFunction(key=>{
+      const snap=__THIA_TEST.mascotStudio.snapshot[state.avatar],target=__THIA_BATTERY_TEST.contact()?.actor;
+      return snap?.actionPose===key&&target&&Math.abs(snap.x-target.x)<.04&&Math.abs(snap.z-target.z)<.04;
+    },expected);
     batteryFrames.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(a=>Math.round(a[0]*100)/100))));
     const batteryContact=await page.evaluate(()=>{
       const actor=__THIA_TEST.mascotStudio.snapshot[state.avatar];
-      return {phase:__THIA_BATTERY_TEST.phase().i,max:Math.max(...actor.contactErrors),hands:actor.hands};
+      return {phase:__THIA_BATTERY_TEST.phase().i,max:Math.max(...actor.contactErrors),hands:actor.hands,actor:{x:actor.x,z:actor.z},target:__THIA_BATTERY_TEST.contact()};
     });
     console.log('BATTERY_PHYSICAL_CONTACT',JSON.stringify(batteryContact));
     check('Battery phase '+(i+1)+' keeps actual hands on the working part',batteryContact.max<.28);
