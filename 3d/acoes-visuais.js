@@ -13,8 +13,8 @@ const actionPrograms={
  garage:['garage:meter','garage:compare','garage:ground','garage:clean'],
  code:['code:review','code:calculate','code:responsive','code:tests']
 };
-const centers={garage:{x:28.7,z:-18.0,face:Math.PI,focus:[29.55,1.65,-19.4]},
- code:{x:-44.5,z:-19.1,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
+const centers={garage:{x:29.05,z:-18.55,face:Math.PI,focus:[29.55,1.65,-19.4]},
+ code:{x:-45.35,z:-19.42,face:Math.PI,focus:[-45.35,1.7,-20.0]}};
 const duration=4.5;
 let scene=null,pickup=null,checkpoint=null,greeting=0,shots=0;
 const label=document.createElement('div');
