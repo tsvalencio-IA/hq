@@ -287,8 +287,7 @@ function stageProps(s,t){
    bulb(29.83,1.91,-19.59,.075,'#25394d');
    bar(28.84,1.48,-18.65,.27,.22,.13,'#1d5280');
    bar(28.84,1.63,-18.50,.23,.07,.025,v>.68?glow:'#8cb8d1');
-   cord([28.72,1.53,-18.62],[29.20,1.91+(1-v)*.22,-19.59],'#ef6964');
-   cord([28.96,1.53,-18.62],[29.83,1.91+(1-v)*.18,-19.59],'#25364b');
+   // The red and black leads are drawn from the hands above.
    for(let k=0;k<4;k++)bar(28.70+k*.10,1.73,-18.49,.035,.02,.012,k<Math.round(v*4)?glow:'#34475a');
   }else if(s.step===1){
    // 2. Alternator/battery are distinct comparison instruments.
@@ -304,8 +303,7 @@ function stageProps(s,t){
    // 3. Ground cable and return circuit; sequential conduction pulses.
    bar(29.45,1.52,-19.55,.48,.22,.23,'#505864');
    bar(28.99,1.59,-18.77,.28,.20,.15,'#28577b');
-   cord([28.88,1.69,-18.76],[29.14,1.77,-19.62],'#e96364');
-   cord([29.08,1.67,-18.76],[29.84,1.79,-19.37],'#253444');
+   // Probe leads follow the working hands instead of a fixed animation.
    bulb(29.14,1.77,-19.62,.074,'#d35d49');
    bulb(29.84,1.79,-19.37,.072,'#d0dfd7');
    for(let k=0;k<5;k++)if(v>k/5)bulb(29.20+k*.14,1.96,-19.4,.04,glow);
@@ -313,9 +311,7 @@ function stageProps(s,t){
    // 4. Oxidation visibly disappears under a moving wire brush.
    bar(29.25,1.62,-19.55,.28,.20,.22,'#4e5964');
    bar(29.25,1.77,-19.55,.13,.052,.12,v>.7?'#67dfad':'#b36e35');
-   const shift=Math.sin(t*14)*v*.20;
-   cord([28.82,1.93,-19.10],[29.25+shift,1.83,-19.55],'#d5a366');
-   bar(29.25+shift,1.83,-19.55,.11,.07,.08,'#b9c6c5');
+   // The real wire brush is now carried at the wrist (see attachment above).
    for(let k=0;k<9;k++)if(v<k/9)bulb(29.08+(k%3)*.13,1.89+Math.floor(k/3)*.075,-19.50,.026,'#aa7843');
    if(v>.88)for(let k=0;k<3;k++)bulb(29.16+k*.10,1.93,-19.55,.032,'#77f2bb');
   }
@@ -338,9 +334,7 @@ function stageProps(s,t){
   for(let k=0;k<3;k++)bar(-44.72+k*.15,1.08+k*v*.13,-19.75,.060,.05+k*v*.09,.06,'#f4c778');
  }else if(s.step===2){
   // 7. A tangible telephone tilts portrait-to-landscape, rearranging blocks.
-  const angle=-v*Math.PI/2,mid=M.tr(-44.57,1.48,-19.75);
-  E.draw('box',M.mul(mid,M.mul(M.rz(angle),M.s(.16,.28,.04))),'#263b54');
-  E.draw('box',M.mul(M.tr(-44.57,1.48,-19.70),M.mul(M.rz(angle),M.s(.135,.235,.010))),glow);
+  // The handset rotates while held by the character, not on a stand.
   for(let k=0;k<4;k++){
    const x=-45.73+(v>.5?k*.25:(k%2)*.40),y=1.72-(v>.5?0:Math.floor(k/2)*.19);
    bar(x,y,-20.190,.095,.045,.013,'#afdcef');
