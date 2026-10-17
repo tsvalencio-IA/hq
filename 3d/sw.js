@@ -1,5 +1,5 @@
 /* Instalação web do Universo thIAguinho 3D. Não altera estado nem jogabilidade. */
-const CACHE = 'universo-thiaguinho-3d-pwa-v3';
+const CACHE = 'universo-thiaguinho-3d-pwa-v4';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './mascotes-3d.js', './acoes-visuais.js', './acoes-visuais.css',
