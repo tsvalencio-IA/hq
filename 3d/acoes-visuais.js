@@ -208,48 +208,20 @@ function toyMesh(kind,x,y,z,k=1){
  }
 }
 function missionObjects(s,t){
- const a=s.area,p=clamp01(s.elapsed/duration),work=smooth((p-.27)/.65);
+ // Only the shared physical workstation remains identical. The actual objects
+ // and joints for each step are drawn in stageProps below.
  if(s.mode==='garage'){
-  // Physical meter, probes, work lights and the oxidized/repaired connection.
-  box(29.45,1.43,-19.38,.48,.20,.32,'#243c57');
-  box(29.45,1.55,-19.04,.33,.045,.016,s.correct?'#5ff2ad':'#ffc15e');
-  for(let i=0;i<3;i++)box(29.35+i*.085,1.58,-19.03,.028,.019,.01,'#163c45');
-  const reach=work*Math.sin(p*Math.PI*3);
-  rod(29.2,1.62+reach*.11,-18.8,.025,.22,.025,'#e75250');
-  rod(29.8,1.62-reach*.11,-18.8,.025,.22,.025,'#273849');
-  box(29.05,1.25,-19.55,.16,.11,.16,s.step===3&&work>.55?'#75c987':'#a46b45');
-  if(s.step===3)for(let i=0;i<3;i++){
-   const radius=.15+(.20*work)+i*.065;
-   E.draw('torus',M.mul(M.tr(29.05,1.26,-19.55),M.s(radius,radius,.018)),
-    work>.5?'#5ed6a1':'#e3ac73');
-  }
-  if(s.step===1||s.step===2)for(let i=0;i<5;i++){
-   sphere(29.22+i*.14,1.83+.06*Math.sin(t*8+i),-19.2,.025,s.correct?'#55e9b1':'#edba6d');
-  }
+  box(29.46,1.22,-19.40,.92,.10,.67,'#324655');
+  box(29.46,1.33,-19.40,.79,.035,.57,'#566873');
+  box(28.85,.92,-18.67,.68,.04,.32,'#987b58');
  }else{
-  // The character types on a genuine three-dimensional workstation; the
-  // visual state changes with the solution instead of remaining an HTML-only quiz.
   box(-45.35,.81,-20.06,1.12,.06,.62,'#98734f');
-  for(let side of [-1,1])rod(-45.35+side*.88,.39,-20.06,.07,.40,.07,'#46555e');
+  for(let side of [-1,1])rod(-45.35+side*.88,.40,-20.06,.07,.39,.07,'#46555e');
   box(-45.35,1.58,-20.32,.78,.57,.075,'#253f52');
   box(-45.35,1.58,-20.22,.69,.48,.016,'#14394b');
-  const colors=s.correct?['#56dce4','#7df0a7','#b4f5bf']:['#e7ad63','#f17265','#f8b56a'];
-  for(let row=0;row<3;row++)for(let col=0;col<4;col++)
-   box(-45.82+col*.27,1.74-row*.15,-20.194,.084+.07*work,.022,.007,
-    colors[(row+col+s.step)%colors.length]);
   box(-45.34,.97,-19.65,.56,.034,.24,'#263b50');
-  const pulse=Math.sin(t*11)*work;
-  for(let k=0;k<3;k++)
-   box(-45.62+k*.27,1.004+Math.max(0,pulse)*.018,-19.52,.15,.014,.09,'#a7d9df');
-  // A physical phone represents the responsiveness exercise.
-  if(s.step===2){
-   const angle=smooth(work);
-   box(-44.55,1.40,-19.84,.17+.13*angle,.30-.08*angle,.035,'#1b2d40');
-   box(-44.55,1.40,-19.79,.14+.12*angle,.25-.07*angle,.007,s.correct?'#55c98d':'#bd6e50');
-  }
-  if(s.step===3&&work>.45)
-   for(let i=0;i<3;i++)sphere(-45.72+i*.36,2.13,-20.24,.055,'#7cf6c4');
  }
+ const a=s.area;
  const point=M.project(camera.vp,[a.focus[0],2.55,a.focus[2]],E.width,E.height);
  if(point){
   label.style.display='block';
@@ -257,7 +229,6 @@ function missionObjects(s,t){
   label.style.top=Math.max(75,point[1]-25)+'px';
  }
 }
-
 function stageProps(s,t){
  const u=clamp01((s.elapsed/duration-.20)/.80),v=smooth(u),glow=s.correct?'#61e9b2':'#f5b46f';
  const bar=(x,y,z,dx,dy,dz,col)=>E.draw('box',M.tr(x,y,z,dx,dy,dz),col);
