@@ -462,6 +462,8 @@
       'battery:remove': {left:[-1.58,-0.48,0.11,-0.1],right:[-1.52,-0.49,-0.13,-0.1],head:0.33,lean:0.2,rate:3.2,amp:0.07,grip:0.9,squat:0.28},
       'battery:install': {left:[-1.55,-0.49,0.14,-0.12],right:[-1.59,-0.49,-0.12,0.13],head:0.29,lean:0.19,rate:3.3,amp:0.08,grip:0.9,squat:0.22},
       'battery:fix': {left:[-1.17,-0.87,0.08,-0.18],right:[-1.77,-0.65,-0.17,0.31],head:0.31,lean:0.18,rate:9.7,amp:0.13,grip:0.87,squat:0},
+      'battery:positive-connect': {left:[-1.16,-.59,.13,.27],right:[-1.72,-.70,-.22,.37],head:.28,lean:.17,rate:6.3,amp:.12,grip:.75,squat:0},
+      'battery:negative-connect': {left:[-1.68,-.83,.22,.22],right:[-.84,-1.06,-.05,-.15],head:.24,lean:.14,rate:6.9,amp:.13,grip:.72,squat:0},
       'battery:verify': {left:[-0.36,-0.32,0.03,0.02],right:[-1.25,-0.71,-0.2,-0.13],head:0.19,lean:0.06,rate:3.1,amp:0.1,grip:0.13,squat:0}
     };
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
