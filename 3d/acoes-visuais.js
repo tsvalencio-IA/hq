@@ -280,9 +280,9 @@ function stageProps(s,t){
    }else{
      // Wire-brush handle is gripped by the actual right palm. Rust clears
      // under its moving bristles while the left hand steadies the terminal.
-     const tip=[right[0]+.09,right[1]-.025,right[2]-.02];
+     const tip=[right[0]+.20,right[1]-.025,right[2]-.03];
      join(right,tip,.030,'#b8884a');
-     cube(tip[0],tip[1],tip[2],.085,.04,.045,'#bfc9cb');
+     cube(tip[0],tip[1],tip[2],.11,.045,.045,'#bfc9cb');
      for(let i=0;i<5;i++)join([tip[0]-.03+i*.016,tip[1]-.028,tip[2]],
        [tip[0]-.03+i*.016,tip[1]-.06,tip[2]],.007,'#e4cfa4');
      cube(29.21,1.55,-19.15,.105,.035,.10,done>.65?'#75edb0':'#af753f');
