@@ -135,6 +135,12 @@ try {
     check('Garage action remains available for inspection after performance',await page.evaluate(()=>__THIA_ACTIONS.isActive()));
     await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
     garageMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
+    const garageContact=await page.evaluate(()=>{
+      const actor=__THIA_TEST.mascotStudio.snapshot[state.avatar];
+      return {step:__THIA_ACTIONS.current().step,max:Math.max(...actor.contactErrors),hands:actor.hands};
+    });
+    console.log('GARAGE_PHYSICAL_CONTACT',JSON.stringify(garageContact));
+    check('Garage step '+(step+1)+' reaches physical target with both palms',garageContact.max<.26);
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
@@ -174,6 +180,12 @@ try {
     },i);
     await page.waitForFunction(key=>__THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===key,expected);
     batteryFrames.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(a=>Math.round(a[0]*100)/100))));
+    const batteryContact=await page.evaluate(()=>{
+      const actor=__THIA_TEST.mascotStudio.snapshot[state.avatar];
+      return {phase:__THIA_BATTERY_TEST.phase().i,max:Math.max(...actor.contactErrors),hands:actor.hands};
+    });
+    console.log('BATTERY_PHYSICAL_CONTACT',JSON.stringify(batteryContact));
+    check('Battery phase '+(i+1)+' keeps actual hands on the working part',batteryContact.max<.28);
   }
   check('Nine successive battery procedures have distinct joint poses',new Set(batteryFrames).size===9);
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
@@ -204,6 +216,12 @@ try {
     await page.waitForFunction(() => __THIA_ACTIONS.current()?.phase==='done', null, { timeout: 20000 });
     await page.waitForFunction(() => __THIA_TEST.mascotStudio.snapshot[state.avatar]?.actionPose===__THIA_ACTIONS.current()?.poseKey);
     technologyMotionSignatures.push(await page.evaluate(()=>JSON.stringify(__THIA_TEST.mascotStudio.snapshot[state.avatar].armAngles.map(v=>Math.round(v[0]*100)/100))));
+    const technologyContact=await page.evaluate(()=>{
+      const actor=__THIA_TEST.mascotStudio.snapshot[state.avatar];
+      return {step:__THIA_ACTIONS.current().step,max:Math.max(...actor.contactErrors),hands:actor.hands};
+    });
+    console.log('TECH_PHYSICAL_CONTACT',JSON.stringify(technologyContact));
+    check('Technology stage '+(step+1)+' reaches its physical screen or object',technologyContact.max<.26);
     await page.locator('#actionContinue').click();
     await page.waitForFunction(() => !__THIA_ACTIONS.isActive());
   }
