@@ -105,7 +105,20 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(work&&id===state.avatar){
   const phase=findPhase(work.elapsed),walking=phase.i===0;
   const key=batteryPoses[Math.min(phase.i,10)];
-  const pose=walking?null:{kind:key,progress:phase.p};
+  // The wrist IK is driven by the same target as the animated terminal.
+  const physicalTargets=[
+    null,[[29.15,1.84,-19.15],[29.58,1.84,-19.15]],
+    [[29.19,1.69,-19.16],[29.60,1.76,-19.16]],
+    [[29.18,1.75,-19.16],[29.60,1.67,-19.15]],
+    [[29.18,1.62,-19.18],[29.55,1.75,-19.20]],
+    [[29.11,1.51,-19.13],[29.53,1.54,-19.14]],
+    [[29.11,1.54,-19.13],[29.51,1.54,-19.14]],
+    [[29.18,1.65,-19.19],[29.55,1.74,-19.20]],
+    [[29.19,1.72,-19.17],[29.58,1.73,-19.17]],
+    [[29.18,1.70,-19.17],[29.57,1.69,-19.17]],
+    [[29.16,1.72,-19.16],[29.57,1.70,-19.17]]
+  ];
+  const pose=walking?null:{kind:key,progress:phase.p,targets:physicalTargets[Math.min(phase.i,10)]};
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
      walking?t:work.elapsed*2,0,0,0,pose);
  }
@@ -157,12 +170,7 @@ function drawWorkshop(){
   const lift=i===4?ease(p)*.39:i===7?(1-ease(p))*.39:0;
   drawBox(29.45,1.94+lift,-19.45,.62,.045,.075,'#b7bfc4');
  }
- // The mechanic positions the wrench over the actual terminal or bracket.
- if([2,3,4,7,8,9].includes(i)){
-  const point=i===2||i===9?[29.70,-19.63]:i===3||i===8?[29.18,-19.63]:[29.45,-19.45];
-  const y=1.98+.055*Math.sin(work.elapsed*9);
-  E.draw('cyl',M.mul(M.tr(point[0],y,point[1]),M.mul(M.rz(.34*Math.sin(work.elapsed*7)),M.s(.036,.22,.036))),'#b1bbc7');
- }
+ // The hand-attached tool is rendered below, not duplicated over the bay.
  // Each phase highlights only its active physical target.
  if(i===0){drawBox(28.45,.85,-17.75,.45,.10,.32,'#ffd36f')}
  if(i===1)drawOrb(30.02,1.65+open*.4,-19.9,.095,'#f8d985');
@@ -172,6 +180,13 @@ function drawWorkshop(){
  }
  if(i===10){
    drawOrb(29.45,1.95,-19.45,.085,p>.70?'#77eaba':'#f3ce7b');
+ }
+ // Actual tool/grip is anchored at the live articulated wrist.
+ const palms=mascotStudio.snapshot[state.avatar]?.handPositions;
+ if(palms&&i>=2&&i<=9){
+   const hand=palms[1];
+   if(hand&&[2,3,4,7,8,9].includes(i))
+     E.draw('cyl',M.mul(M.tr(hand[0],hand[1]-.08,hand[2]),M.mul(M.rz(.28),M.s(.032,.16,.032))),'#e5dcdc');
  }
  // indicador de ponto de trabalho, legível sem bloquear personagem
  E.draw('torus',M.mul(M.tr(29.65,.23,-18.35),M.s(.49,.49,.49)),'#f5cd66');
