@@ -206,5 +206,5 @@ function drawWorkshop(){
 }
 const originalDraw=drawWorld;
 drawWorld=function(t){originalDraw(t);drawWorkshop()};
-window.__THIA_BATTERY_TEST={begin,leave,phase:()=>work?findPhase(work.elapsed):null,pose:()=>work?batteryPoses[Math.min(findPhase(work.elapsed).i,10)]:null,poses:batteryPoses.slice(),steps,total,isActive:()=>!!work,advance:dt=>{if(work){work.elapsed=Math.min(total,work.elapsed+dt);refreshPanel()}},panel};
+window.__THIA_BATTERY_TEST={begin,leave,phase:()=>work?findPhase(work.elapsed):null,contact:()=>work?actualTask(findPhase(work.elapsed).i,findPhase(work.elapsed).p):null,pose:()=>work?batteryPoses[Math.min(findPhase(work.elapsed).i,10)]:null,poses:batteryPoses.slice(),steps,total,isActive:()=>!!work,advance:dt=>{if(work){work.elapsed=Math.min(total,work.elapsed+dt);refreshPanel()}},panel};
 })();
