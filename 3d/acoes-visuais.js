@@ -180,7 +180,21 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
   const walking=scene.elapsed<duration*.17;
   const acting=scene.elapsed>duration*.17;
   const phase=clamp01((scene.elapsed/duration-.17)/.83);
-  const pose=acting?{kind:scene.poseKey,progress:phase}:null;
+  const targets={
+     garage:[
+       [[29.17,1.62,-19.08],[29.52,1.63,-19.09]],
+       [[29.06,1.48,-19.06],[29.46,1.55,-19.12]],
+       [[29.13,1.59,-19.13],[29.53,1.63,-19.18]],
+       [[29.02,1.54,-19.05],[29.27+Math.sin(scene.elapsed*11)*.12,1.67,-19.14]]
+     ],
+     code:[
+       [[-45.67,1.14,-19.74],[-45.24,1.39,-19.79]],
+       [[-45.56,1.07,-19.62],[-45.20,1.07,-19.61]],
+       [[-45.56,1.18,-19.61],[-45.07,1.40,-19.64]],
+       [[-45.53,1.07,-19.66],[-45.19,1.20,-19.69]]
+     ]
+   };
+   const pose=acting?{kind:scene.poseKey,progress:phase,targets:targets[scene.mode][scene.step]}:null;
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
     acting?scene.elapsed*2:t,0,0,0,pose);
  }
