@@ -192,7 +192,15 @@ try {
     check('Battery phase '+(i+1)+' keeps actual hands on the working part',batteryContact.max<.28);
     if(i===5||i===6)await screenshot(page,'battery-two-hands-stage-'+i);
   }
-  check('Nine successive battery procedures have distinct joint poses',new Set(batteryFrames).size===9);
+  check('Different battery stages use task-specific poses while reverse operations may share a grip',new Set(batteryFrames).size>=5);
+  check('Battery is lifted from bay onto shelf, then new battery follows the reverse path',await page.evaluate(()=>{
+    const plan=__THIA_BATTERY_TEST.plan;
+    const at=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]))<.0001;
+    const removeStart=plan(5,0).oldAt,removeFinish=plan(5,1).oldAt;
+    const insertStart=plan(6,0).newAt,insertFinish=plan(6,1).newAt;
+    return at(removeStart,insertFinish)&&!at(removeStart,removeFinish)&&!at(insertStart,insertFinish)
+      &&removeFinish[0]<removeStart[0]&&insertStart[0]<insertFinish[0];
+  }));
   await page.evaluate(() => window.__THIA_BATTERY_TEST.advance(window.__THIA_BATTERY_TEST.total));
   check('Battery workshop completes 11 visible steps', await page.locator('#batteryStepTitle').innerText().then(t => t.includes('concluído')));
   await screenshot(page, 'battery-workshop');
