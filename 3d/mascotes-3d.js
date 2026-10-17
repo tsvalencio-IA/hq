@@ -517,6 +517,8 @@
       for (const a of rig.arms) {
         a.shoulder.rot[0] = -gait * a.sign * walk * (run ? .65 : .42) - (throwing && a.sign === 1 ? Math.sin(throwing * PI) * 2.0 : 0);
         a.shoulder.rot[2] = -a.sign * (.07 + Math.sin(time * 1.6) * .014);
+        // No yaw must leak from an earlier inverse-kinematics operation.
+        a.shoulder.rot[1] = 0;
         a.elbow.rot[0] = -(run && walk ? .85 : .16) - Math.max(0, gait * a.sign) * walk * .18;
         a.palm.rot[0] = .04 * Math.sin(time * 2);
         const grip = throwing && a.sign === 1 ? Math.sin(throwing * PI) : 0;
