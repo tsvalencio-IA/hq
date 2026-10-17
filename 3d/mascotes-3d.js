@@ -481,26 +481,50 @@
     function reachHand(root,arm,target){
       if(!target)return;
       const joints=[
-        [arm.shoulder,0,-2.55,.38],
-        [arm.shoulder,2,-1.12,1.12],
-        [arm.shoulder,1,-.70,.70],
-        [arm.elbow,0,-2.20,.10]
+        [arm.shoulder,0,-2.60,.28],
+        [arm.shoulder,2,-1.24,1.24],
+        [arm.shoulder,1,-.95,.95],
+        [arm.elbow,0,-2.30,.15]
       ];
-      const error=()=>{
+      const measure=()=>{
         const hand=handWorld(root,arm);
         return (hand[0]-target[0])**2+(hand[1]-target[1])**2+(hand[2]-target[2])**2;
       };
-      for(const step of [.40,.21,.10,.048,.021]){
-        for(const [joint,index,min,max] of joints){
-          const before=joint.rot[index];
-          let best=before,dist=error();
-          for(const change of [-step,step]){
-            joint.rot[index]=clamp(before+change,min,max);
-            const e=error();if(e<dist){dist=e;best=joint.rot[index]}
+      const state=()=>joints.map(([joint,i])=>joint.rot[i]);
+      const set=values=>joints.forEach(([joint,i],k)=>joint.rot[i]=values[k]);
+      const improve=()=>{
+        for(const step of [.52,.27,.135,.065,.028,.012]){
+          for(const [joint,index,min,max] of joints){
+            const before=joint.rot[index];
+            let best=before,dist=measure();
+            for(const change of [-step,step]){
+              joint.rot[index]=clamp(before+change,min,max);
+              const e=measure();if(e<dist){dist=e;best=joint.rot[index]}
+            }
+            joint.rot[index]=best;
           }
-          joint.rot[index]=best;
+          if(measure()<.0008)break;
+        }
+      };
+      const current=state();
+      improve();
+      let bestState=state(),bestDistance=measure();
+      if(bestDistance>.0025){
+        // An elbow-folded arm can be trapped on the wrong side of the prop.
+        // Alternative anatomically valid seeds avoid those false solutions.
+        const seeds=[
+          [-1.15,-arm.sign*.10,0,-.48],
+          [-1.55,arm.sign*.16,0,-.20],
+          [-.85,arm.sign*.18,0,-1.04]
+        ];
+        for(const seed of seeds){
+          set(seed);improve();
+          const d=measure();
+          if(d<bestDistance){bestDistance=d;bestState=state()}
+          if(bestDistance<.0008)break;
         }
       }
+      set(bestState);
     }
     function drawHuman(id, x, z, heading, move, run, jump, time, throwing, wave = 0, work = 0, actionPose = null) {
       const rig = rigs[id], walk = clamp(move, 0, 1), frequency = run ? 11.4 : 7.6, gait = Math.sin(time * frequency), bob = walk * Math.cos(time * frequency * 2) * (run ? .035 : .018);
