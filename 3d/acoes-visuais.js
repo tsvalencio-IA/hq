@@ -177,9 +177,9 @@ person=function(id,x,z,heading,move=0,run=false,jump=0,t=0,throwing=0){
  if(batteryOn())return normalPerson(id,x,z,heading,move,run,jump,t,throwing);
  if(scene){
   if(id!==state.avatar)return normalPerson(id,x,z,heading,0,false,0,t,0);
-  const walking=scene.elapsed<duration*.33;
-  const acting=scene.elapsed>duration*.33;
-  const phase=clamp01((scene.elapsed/duration-.33)/.67);
+  const walking=scene.elapsed<duration*.17;
+  const acting=scene.elapsed>duration*.17;
+  const phase=clamp01((scene.elapsed/duration-.17)/.83);
   const pose=acting?{kind:scene.poseKey,progress:phase}:null;
   return mascotStudio.drawHuman(id,x,z,heading,walking?1:0,false,0,
     acting?scene.elapsed*2:t,0,0,0,pose);
@@ -259,7 +259,7 @@ function missionObjects(s,t){
 }
 
 function stageProps(s,t){
- const u=clamp01((s.elapsed/duration-.31)/.69),v=smooth(u),glow=s.correct?'#61e9b2':'#f5b46f';
+ const u=clamp01((s.elapsed/duration-.20)/.80),v=smooth(u),glow=s.correct?'#61e9b2':'#f5b46f';
  const bar=(x,y,z,dx,dy,dz,col)=>E.draw('box',M.tr(x,y,z,dx,dy,dz),col);
  const rod=(x,y,z,h,col)=>E.draw('cyl',M.tr(x,y,z,.035,h,.035),col);
  const bulb=(x,y,z,r,col)=>E.draw('sphere',M.tr(x,y,z,r,r,r),col);
